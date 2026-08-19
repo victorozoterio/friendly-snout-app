@@ -1,15 +1,14 @@
-import { Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { YStack } from 'tamagui';
+
+import { TamaguiTestCard } from '../components/tamagui-test-card';
 
 export default function Home() {
   return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-      }}
-    >
-      <Text>Hello World 🚀</Text>
-    </View>
+    <SafeAreaView style={{ flex: 1 }}>
+      <YStack bg='$background' flex={1} items='center' justify='center' p='$5'>
+        <TamaguiTestCard />
+      </YStack>
+    </SafeAreaView>
   );
 }
