@@ -1,15 +1,11 @@
 import { Stack } from 'expo-router';
-import { useColorScheme } from 'react-native';
-import { TamaguiProvider } from 'tamagui';
 
-import { tamaguiConfig } from '../../tamagui.config';
+import { AppThemeProvider } from '../theme';
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-
   return (
-    <TamaguiProvider config={tamaguiConfig} defaultTheme={colorScheme === 'dark' ? 'dark' : 'light'}>
+    <AppThemeProvider>
       <Stack />
-    </TamaguiProvider>
+    </AppThemeProvider>
   );
 }
