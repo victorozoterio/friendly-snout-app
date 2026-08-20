@@ -1,11 +1,5 @@
-import { Link } from 'expo-router';
-import { Text } from 'react-native';
+import { Redirect } from 'expo-router';
 
 export default function Home() {
-  return (
-    <>
-      <Text>Home</Text>
-      <Link href='/login'>Voltar para login</Link>
-    </>
-  );
+  return <Redirect href='/dashboard' />;
 }

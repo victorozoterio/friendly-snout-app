@@ -1,12 +1,37 @@
-import { useRouter } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
+import { useState } from 'react';
 import { Image, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Input, Label, Text, YStack } from 'tamagui';
 
 import Logo from '../assets/logo.png';
+import { useAuth } from '../contexts/auth-context';
 
 export default function Login() {
   const router = useRouter();
+  const { signIn, status } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  if (status === 'loading') return null;
+  if (status === 'authenticated') return <Redirect href='/dashboard' />;
+
+  const handleSignIn = async () => {
+    setErrorMessage(null);
+    setIsSubmitting(true);
+
+    try {
+      await signIn(email, password);
+      router.replace('/dashboard');
+    } catch (error: unknown) {
+      const statusCode = (error as { response?: { status?: number } }).response?.status;
+      setErrorMessage(statusCode === 401 ? 'Credenciais inválidas.' : 'Não foi possível acessar. Tente novamente.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -32,10 +57,12 @@ export default function Login() {
                   borderWidth={1}
                   color='$text'
                   id='email'
+                  onChangeText={setEmail}
                   placeholder='Digite seu email'
                   placeholderTextColor='$placeholder'
                   rounded='$2'
                   size='$5'
+                  value={email}
                 />
               </YStack>
 
@@ -49,21 +76,30 @@ export default function Login() {
                   borderWidth={1}
                   color='$text'
                   id='password'
+                  onChangeText={setPassword}
                   placeholder='Digite sua senha'
                   placeholderTextColor='$placeholder'
                   rounded='$2'
                   secureTextEntry
                   size='$5'
+                  value={password}
                 />
               </YStack>
+
+              {errorMessage ? (
+                <Text color='$error' fontSize={14}>
+                  {errorMessage}
+                </Text>
+              ) : null}
 
               <Button
                 bg='$primary'
                 color='$white'
                 fontSize={18}
                 fontWeight='700'
+                disabled={isSubmitting}
                 mt='$2'
-                onPress={() => router.replace('/home')}
+                onPress={handleSignIn}
                 pressStyle={{ bg: '$secondary' }}
                 rounded='$2'
                 size='$6'

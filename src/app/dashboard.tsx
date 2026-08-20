@@ -1,0 +1,26 @@
+import { Redirect, useRouter } from 'expo-router';
+import { Button, H1, YStack } from 'tamagui';
+
+import { useAuth } from '../contexts/auth-context';
+
+export default function Dashboard() {
+  const router = useRouter();
+  const { logout, status } = useAuth();
+
+  if (status === 'loading') return null;
+  if (status === 'unauthenticated') return <Redirect href='/login' />;
+
+  return (
+    <YStack bg='$background' flex={1} gap='$5' items='center' justify='center' p='$5'>
+      <H1 color='$primary'>Dashboard</H1>
+      <Button
+        onPress={async () => {
+          await logout();
+          router.replace('/login');
+        }}
+      >
+        Sair
+      </Button>
+    </YStack>
+  );
+}
