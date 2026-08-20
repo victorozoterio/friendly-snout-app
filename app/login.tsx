@@ -4,8 +4,9 @@ import { Image, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Input, Label, Text, YStack } from 'tamagui';
 
-import Logo from '../assets/logo.png';
-import { useAuth } from '../contexts/auth-context';
+import { useAuth } from '../src/contexts/auth-context';
+
+const Logo = require('../assets/logo.png') as number;
 
 export default function Login() {
   const router = useRouter();
@@ -16,7 +17,7 @@ export default function Login() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   if (status === 'loading') return null;
-  if (status === 'authenticated') return <Redirect href='/dashboard' />;
+  if (status === 'authenticated') return <Redirect href={'/' as never} />;
 
   const handleSignIn = async () => {
     setErrorMessage(null);
@@ -24,7 +25,7 @@ export default function Login() {
 
     try {
       await signIn(email, password);
-      router.replace('/dashboard');
+      router.replace('/' as never);
     } catch (error: unknown) {
       const statusCode = (error as { response?: { status?: number } }).response?.status;
       setErrorMessage(statusCode === 401 ? 'Credenciais inválidas.' : 'Não foi possível acessar. Tente novamente.');
