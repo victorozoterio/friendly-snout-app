@@ -4,6 +4,7 @@
     "slug": "friendly-snout-app",
     "version": "1.0.0",
     "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
     "scheme": "friendlysnoutapp",
     "plugins": ["expo-router"],
     "experiments": {

@@ -7,7 +7,7 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!**/node_modules", "!**/dist", "!**/*.lock", "!**/*.d.ts", "!**/coverage"]
+    "includes": ["**", "!**/.tamagui", "!**/node_modules", "!**/dist", "!**/*.lock", "!**/*.d.ts", "!**/coverage"]
   },
   "formatter": {
     "enabled": true,
