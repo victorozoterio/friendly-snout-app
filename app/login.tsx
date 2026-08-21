@@ -4,7 +4,14 @@ import { Image, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Input, Label, Text, YStack } from 'tamagui';
 
+import { FormErrorInline } from '../src/components/form-error-inline';
 import { useAuth } from '../src/contexts/auth-context';
+import {
+  emptySignInFieldErrors,
+  getSignInErrorMessage,
+  type SignInFieldErrors,
+  signInSchema,
+} from '../src/services/auth';
 
 const Logo = require('../assets/logo.png') as number;
 
@@ -14,21 +21,34 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<SignInFieldErrors>(emptySignInFieldErrors);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   if (status === 'loading') return null;
   if (status === 'authenticated') return <Redirect href={'/' as never} />;
 
   const handleSignIn = async () => {
-    setErrorMessage(null);
+    const result = signInSchema.safeParse({ email, password });
+    setApiError(null);
+
+    if (!result.success) {
+      const errors = result.error.flatten().fieldErrors;
+      setFieldErrors({
+        email: errors.email?.[0] ?? null,
+        password: errors.password?.[0] ?? null,
+      });
+      return;
+    }
+
+    setFieldErrors(emptySignInFieldErrors);
+
     setIsSubmitting(true);
 
     try {
-      await signIn(email, password);
+      await signIn(result.data.email, result.data.password);
       router.replace('/' as never);
     } catch (error: unknown) {
-      const statusCode = (error as { response?: { status?: number } }).response?.status;
-      setErrorMessage(statusCode === 401 ? 'Credenciais inválidas.' : 'Não foi possível acessar. Tente novamente.');
+      setApiError(getSignInErrorMessage(error));
     } finally {
       setIsSubmitting(false);
     }
@@ -46,38 +66,47 @@ export default function Login() {
               style={{ height: 255, width: 288 }}
             />
 
-            <YStack gap='$5' width='100%'>
-              <YStack gap='$2'>
+            <YStack gap='$2' width='100%'>
+              <YStack gap='$1'>
                 <Label color='$primary' fontSize={18} fontWeight='700' htmlFor='email'>
                   Email
                 </Label>
                 <Input
                   autoCapitalize='none'
                   bg='$white'
-                  borderColor='$border'
+                  borderColor={fieldErrors.email || apiError ? '$error' : '$border'}
                   borderWidth={1}
                   color='$text'
                   id='email'
-                  onChangeText={setEmail}
+                  onChangeText={(value) => {
+                    setEmail(value);
+                    setFieldErrors((current) => ({ ...current, email: null }));
+                    setApiError(null);
+                  }}
                   placeholder='Digite seu email'
                   placeholderTextColor='$placeholder'
                   rounded='$2'
                   size='$5'
                   value={email}
                 />
+                <FormErrorInline message={fieldErrors.email} />
               </YStack>
 
-              <YStack gap='$2'>
+              <YStack gap='$1'>
                 <Label color='$primary' fontSize={18} fontWeight='700' htmlFor='password'>
                   Senha
                 </Label>
                 <Input
                   bg='$white'
-                  borderColor='$border'
+                  borderColor={fieldErrors.password || apiError ? '$error' : '$border'}
                   borderWidth={1}
                   color='$text'
                   id='password'
-                  onChangeText={setPassword}
+                  onChangeText={(value) => {
+                    setPassword(value);
+                    setFieldErrors((current) => ({ ...current, password: null }));
+                    setApiError(null);
+                  }}
                   placeholder='Digite sua senha'
                   placeholderTextColor='$placeholder'
                   rounded='$2'
@@ -85,13 +114,8 @@ export default function Login() {
                   size='$5'
                   value={password}
                 />
+                <FormErrorInline message={fieldErrors.password || apiError} />
               </YStack>
-
-              {errorMessage ? (
-                <Text color='$error' fontSize={14}>
-                  {errorMessage}
-                </Text>
-              ) : null}
 
               <Button
                 bg='$primary'
