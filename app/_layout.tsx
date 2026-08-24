@@ -15,6 +15,8 @@ export default function RootLayout() {
           <Stack.Screen name='login' options={{ headerShown: false }} />
           <Stack.Screen name='index' options={{ headerShown: false }} />
           <Stack.Screen name='animals' options={{ headerShown: false }} />
+          <Stack.Screen name='animal-details/[animalUuid]' options={{ headerShown: false }} />
+          <Stack.Screen name='animal-form' options={{ headerShown: false }} />
           <Stack.Screen name='medicines' options={{ headerShown: false }} />
           <Stack.Screen name='form' options={{ title: 'Form' }} />
           <Stack.Screen name='profile' options={{ title: 'Profile' }} />
