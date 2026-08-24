@@ -12,6 +12,7 @@ type AppColors = {
   border: string;
   card: string;
   cardMuted: string;
+  danger: string;
   muted: string;
   primary: string;
   success: string;
@@ -24,6 +25,7 @@ const darkAppColors: AppColors = {
   border: '#2B5270',
   card: '#0C2942',
   cardMuted: '#103651',
+  danger: '#F87171',
   muted: '#A3B5C8',
   primary: '#347BFF',
   success: '#2DD47B',
@@ -36,6 +38,7 @@ const lightAppColors: AppColors = {
   border: '#B9CDDF',
   card: '#F4F8FC',
   cardMuted: '#DCEAF6',
+  danger: '#C0392B',
   muted: '#526C84',
   primary: '#176FEB',
   success: '#168A54',
