@@ -1,7 +1,7 @@
-import { Redirect, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { ArrowClockwise, PawPrint, WarningCircle } from 'phosphor-react-native';
+import { Redirect, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { ArrowClockwise, PawPrint, PencilSimple, Trash, WarningCircle } from 'phosphor-react-native';
 import { useCallback, useRef, useState } from 'react';
-import { Image, Pressable, RefreshControl, ScrollView } from 'react-native';
+import { ActivityIndicator, Alert, Image, Modal, Pressable, RefreshControl, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card, Text, XStack, YStack } from 'tamagui';
 
@@ -9,7 +9,7 @@ import { AnimalStageBadge } from '../../src/components/animal-stage-badge';
 import { useAppColors } from '../../src/components/main-layout';
 import { ScreenHeader } from '../../src/components/screen-header';
 import { useAuth } from '../../src/contexts/auth-context';
-import { type Animal, getAnimal } from '../../src/services/animals';
+import { type Animal, deleteAnimal, getAnimal, getAnimalErrorMessage } from '../../src/services/animals';
 
 function capitalize(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
@@ -22,8 +22,18 @@ function formatDate(value: string) {
   return `${day}/${month}/${date.getFullYear()}`;
 }
 
+function parseBirthDate(value: string) {
+  const [year, month, day] = value.slice(0, 10).split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function formatBirthDate(value: string) {
+  const [year, month, day] = value.slice(0, 10).split('-');
+  return `${day}/${month}/${year}`;
+}
+
 function formatAge(birthDate: string) {
-  const birth = new Date(birthDate);
+  const birth = parseBirthDate(birthDate);
   const now = new Date();
   let months = (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth());
   if (now.getDate() < birth.getDate()) months -= 1;
@@ -142,7 +152,34 @@ function AnimalDetailsError({ onRetry }: { onRetry: () => void }) {
 
 function AnimalDetailsContent({ animal }: { animal: Animal }) {
   const colors = useAppColors();
+  const router = useRouter();
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const notInformed = 'Não informado';
+  const isFeline = animal.species.name.trim().toLocaleLowerCase('pt-BR') === 'gato';
+
+  const closeDeleteDialog = () => {
+    if (isDeleting) return;
+    setIsDeleteDialogOpen(false);
+    setDeleteError(null);
+  };
+
+  const handleDelete = async () => {
+    setDeleteError(null);
+    setIsDeleting(true);
+
+    try {
+      await deleteAnimal(animal.uuid);
+      setIsDeleteDialogOpen(false);
+      Alert.alert('Animal excluído', `${animal.name} foi removido com sucesso.`);
+      router.dismissTo('/animals' as never);
+    } catch (error: unknown) {
+      setDeleteError(getAnimalErrorMessage(error, 'Não foi possível excluir o animal. Tente novamente.'));
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const generalRows = [
     { label: 'Espécie', value: animal.species.name },
@@ -152,19 +189,23 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
     { label: 'Cor', value: animal.color },
     {
       label: 'Nascimento',
-      value: animal.birthDate ? `${formatDate(animal.birthDate)} (${formatAge(animal.birthDate)})` : notInformed,
+      value: animal.birthDate ? `${formatBirthDate(animal.birthDate)} (${formatAge(animal.birthDate)})` : notInformed,
     },
   ];
 
   const healthRows = [
     { label: 'Castrado', value: animal.castrated ? 'Sim' : 'Não' },
-    { label: 'FIV', value: capitalize(animal.fiv) },
-    { label: 'FELV', value: capitalize(animal.felv) },
+    ...(isFeline
+      ? [
+          { label: 'FIV', value: capitalize(animal.fiv) },
+          { label: 'FELV', value: capitalize(animal.felv) },
+        ]
+      : []),
   ];
 
   const identificationRows = [
-    { label: 'Microchip', value: animal.microchip ?? notInformed },
-    { label: 'RGA', value: animal.rga ?? notInformed },
+    { label: 'Microchip', value: animal.microchip || notInformed },
+    { label: 'RGA', value: animal.rga || notInformed },
   ];
 
   return (
@@ -199,6 +240,157 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
           {animal.species.name} • {animal.breed.name}
         </Text>
       </YStack>
+
+      <XStack gap='$3'>
+        <Pressable
+          accessibilityLabel={`Editar cadastro de ${animal.name}`}
+          onPress={() => router.push(`/edit-animal/${animal.uuid}` as never)}
+          style={({ pressed }) => ({
+            alignItems: 'center',
+            backgroundColor: `${colors.primary}16`,
+            borderColor: colors.primary,
+            borderRadius: 14,
+            borderWidth: 1,
+            flex: 1,
+            justifyContent: 'center',
+            opacity: pressed ? 0.72 : 1,
+            paddingHorizontal: 12,
+            paddingVertical: 13,
+          })}
+        >
+          <XStack gap='$2' items='center' justify='center'>
+            <PencilSimple color={colors.primary} size={20} weight='bold' />
+            <Text fontSize={15} fontWeight='800' style={{ color: colors.primary }}>
+              Editar
+            </Text>
+          </XStack>
+        </Pressable>
+
+        <Pressable
+          accessibilityLabel={`Excluir ${animal.name}`}
+          onPress={() => {
+            setDeleteError(null);
+            setIsDeleteDialogOpen(true);
+          }}
+          style={({ pressed }) => ({
+            alignItems: 'center',
+            backgroundColor: `${colors.danger}12`,
+            borderColor: colors.danger,
+            borderRadius: 14,
+            borderWidth: 1,
+            flex: 1,
+            justifyContent: 'center',
+            opacity: pressed ? 0.72 : 1,
+            paddingHorizontal: 12,
+            paddingVertical: 13,
+          })}
+        >
+          <XStack gap='$2' items='center' justify='center'>
+            <Trash color={colors.danger} size={20} weight='bold' />
+            <Text fontSize={15} fontWeight='800' style={{ color: colors.danger }}>
+              Excluir
+            </Text>
+          </XStack>
+        </Pressable>
+      </XStack>
+
+      <Modal animationType='fade' onRequestClose={closeDeleteDialog} transparent visible={isDeleteDialogOpen}>
+        <YStack flex={1} items='center' justify='center' px='$5' style={{ backgroundColor: 'rgba(2, 12, 22, 0.72)' }}>
+          <Card
+            borderWidth={1}
+            gap='$4'
+            maxWidth={420}
+            p='$5'
+            rounded='$5'
+            style={{ backgroundColor: colors.card, borderColor: colors.border }}
+            width='100%'
+          >
+            <YStack gap='$3' items='center'>
+              <XStack
+                height={52}
+                items='center'
+                justify='center'
+                rounded='$4'
+                style={{ backgroundColor: `${colors.danger}16` }}
+                width={52}
+              >
+                <Trash color={colors.danger} size={27} weight='fill' />
+              </XStack>
+              <YStack gap='$2'>
+                <Text fontSize={20} fontWeight='800' style={{ color: colors.text, textAlign: 'center' }}>
+                  Excluir animal?
+                </Text>
+                <Text fontSize={14} lineHeight={20} style={{ color: colors.muted, textAlign: 'center' }}>
+                  {animal.name} será removido permanentemente. Esta ação não pode ser desfeita.
+                </Text>
+              </YStack>
+            </YStack>
+
+            {deleteError ? (
+              <Card
+                borderWidth={1}
+                p='$3'
+                rounded='$3'
+                style={{ backgroundColor: `${colors.danger}12`, borderColor: colors.danger }}
+              >
+                <XStack gap='$2' items='flex-start'>
+                  <WarningCircle color={colors.danger} size={20} weight='fill' />
+                  <Text flex={1} fontSize={13} lineHeight={19} style={{ color: colors.danger }}>
+                    {deleteError}
+                  </Text>
+                </XStack>
+              </Card>
+            ) : null}
+
+            <XStack gap='$3'>
+              <Pressable
+                accessibilityLabel='Cancelar exclusão'
+                disabled={isDeleting}
+                onPress={closeDeleteDialog}
+                style={({ pressed }) => ({
+                  alignItems: 'center',
+                  backgroundColor: colors.cardMuted,
+                  borderColor: colors.border,
+                  borderRadius: 13,
+                  borderWidth: 1,
+                  flex: 1,
+                  justifyContent: 'center',
+                  opacity: isDeleting ? 0.55 : pressed ? 0.72 : 1,
+                  paddingHorizontal: 12,
+                  paddingVertical: 13,
+                })}
+              >
+                <Text fontSize={14} fontWeight='700' style={{ color: colors.text }}>
+                  Cancelar
+                </Text>
+              </Pressable>
+
+              <Pressable
+                accessibilityLabel={`Confirmar exclusão de ${animal.name}`}
+                disabled={isDeleting}
+                onPress={() => void handleDelete()}
+                style={({ pressed }) => ({
+                  alignItems: 'center',
+                  backgroundColor: colors.danger,
+                  borderRadius: 13,
+                  flex: 1,
+                  justifyContent: 'center',
+                  opacity: isDeleting ? 0.58 : pressed ? 0.78 : 1,
+                  paddingHorizontal: 12,
+                  paddingVertical: 13,
+                })}
+              >
+                <XStack gap='$2' items='center'>
+                  {isDeleting ? <ActivityIndicator color='#FFFFFF' size='small' /> : null}
+                  <Text fontSize={14} fontWeight='800' style={{ color: '#FFFFFF' }}>
+                    {isDeleting ? 'Excluindo...' : 'Excluir'}
+                  </Text>
+                </XStack>
+              </Pressable>
+            </XStack>
+          </Card>
+        </YStack>
+      </Modal>
 
       <InfoCard rows={generalRows} title='Informações gerais' />
       <InfoCard rows={healthRows} title='Saúde' />

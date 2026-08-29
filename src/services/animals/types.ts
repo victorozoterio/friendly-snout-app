@@ -23,6 +23,10 @@ export type AnimalBreed = {
   name: string;
 };
 
+export type AnimalSpeciesOption = AnimalSpecies & {
+  breeds: AnimalBreed[];
+};
+
 export type Animal = {
   uuid: string;
   name: string;
@@ -56,8 +60,35 @@ export type PaginatedAnimals = {
   meta: PaginatedAnimalsMeta;
 };
 
+export type PaginatedAnimalSpecies = {
+  data: AnimalSpeciesOption[];
+  meta: PaginatedAnimalsMeta;
+};
+
 export type GetAnimalsParams = {
   page?: number;
   limit?: number;
   search?: string;
+};
+
+export type AnimalMutationInput = {
+  name: string;
+  sex: AnimalSex;
+  speciesUuid: string;
+  breedUuid: string;
+  size: AnimalSize;
+  color: string;
+  birthDate?: string;
+  microchip: string;
+  rga: string;
+  castrated: boolean;
+  fiv: AnimalFivFelv;
+  felv: AnimalFivFelv;
+  notes: string;
+};
+
+export type CreateAnimalInput = AnimalMutationInput;
+
+export type UpdateAnimalInput = AnimalMutationInput & {
+  status: AnimalStage;
 };
