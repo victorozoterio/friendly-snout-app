@@ -1,11 +1,4 @@
 export { getAnimalErrorMessage } from './errors';
-export {
-  getAnimalPhotos,
-  getAnimalProfilePhoto,
-  removeAnimalPhoto,
-  saveAnimalPhoto,
-  setAnimalProfilePhoto,
-} from './photo-storage';
 export type { AnimalFormFieldErrors, AnimalFormValues } from './schema';
 export {
   emptyAnimalFormValues,

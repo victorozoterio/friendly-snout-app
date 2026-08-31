@@ -1,18 +1,14 @@
-import * as ImagePicker from 'expo-image-picker';
 import { Redirect, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import {
   ArrowClockwise,
   ArrowLeft,
   Calendar,
-  Camera,
   CaretRight,
-  Image as ImageIcon,
   Paperclip,
   PencilSimple,
   Plus,
   Trash,
   WarningCircle,
-  X,
 } from 'phosphor-react-native';
 import { useCallback, useRef, useState } from 'react';
 import {
@@ -31,16 +27,8 @@ import { Card, Text, XStack, YStack } from 'tamagui';
 import { AnimalStageBadge } from '../../src/components/animal-stage-badge';
 import { useAppColors } from '../../src/components/main-layout';
 import { useAuth } from '../../src/contexts/auth-context';
-import {
-  type Animal,
-  deleteAnimal,
-  getAnimal,
-  getAnimalErrorMessage,
-  getAnimalPhotos,
-  getAnimalProfilePhoto,
-  saveAnimalPhoto,
-  setAnimalProfilePhoto,
-} from '../../src/services/animals';
+import { type Animal, deleteAnimal, getAnimal, getAnimalErrorMessage } from '../../src/services/animals';
+import { type Attachment, getAnimalAttachments } from '../../src/services/attachments';
 
 import { safeCapitalize, safeFormatAge, safeFormatBirthDate, safeFormatDate } from '../../src/utils/date';
 
@@ -88,6 +76,14 @@ function InfoCard({ rows, title }: { rows: { label: string; value: string }[]; t
       </Card>
     </YStack>
   );
+}
+
+function isImageAttachment(attachment: Attachment) {
+  return ['jpeg', 'jpg', 'png', 'avif', 'webp'].includes(attachment.type.toLocaleLowerCase('pt-BR'));
+}
+
+function getAttachmentName(attachment: Attachment) {
+  return attachment.name?.trim() || 'Anexo';
 }
 
 function AnimalDetailsSkeleton() {
@@ -173,10 +169,7 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-
-  const [photos, setPhotos] = useState<string[]>([]);
-  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
-  const [isAddPhotoModalOpen, setIsAddPhotoModalOpen] = useState(false);
+  const [recentAttachments, setRecentAttachments] = useState<Attachment[]>([]);
 
   const notInformed = 'Não informado';
   const isFeline = animal.species.name.trim().toLocaleLowerCase('pt-BR') === 'gato';
@@ -184,19 +177,19 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
   const catPlaceholder = require('../../assets/profiles-cat.png');
   const dogPlaceholder = require('../../assets/profiles-dog.png');
 
-  const loadPhotos = useCallback(async () => {
-    const [storedPhotos, storedProfile] = await Promise.all([
-      getAnimalPhotos(animal.uuid),
-      getAnimalProfilePhoto(animal.uuid),
-    ]);
-    setPhotos(storedPhotos);
-    setProfilePhoto(storedProfile);
+  const loadRecentAttachments = useCallback(async () => {
+    try {
+      const response = await getAnimalAttachments(animal.uuid);
+      setRecentAttachments(response.data.slice(0, 3));
+    } catch {
+      setRecentAttachments([]);
+    }
   }, [animal.uuid]);
 
   useFocusEffect(
     useCallback(() => {
-      void loadPhotos();
-    }, [loadPhotos]),
+      void loadRecentAttachments();
+    }, [loadRecentAttachments]),
   );
 
   const closeDeleteDialog = () => {
@@ -220,57 +213,6 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
       setIsDeleting(false);
     }
   };
-
-  const pickImageFromGallery = async () => {
-    setIsAddPhotoModalOpen(false);
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert('Permissão necessária', 'É preciso permitir o acesso às fotos para escolher uma imagem.');
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      allowsEditing: true,
-      mediaTypes: ['images'],
-      quality: 0.8,
-    });
-
-    if (!result.canceled && result.assets[0]?.uri) {
-      const uri = result.assets[0].uri;
-      const updated = await saveAnimalPhoto(animal.uuid, uri);
-      setPhotos(updated);
-      if (!profilePhoto && !animal.photoUrl) {
-        await setAnimalProfilePhoto(animal.uuid, uri);
-        setProfilePhoto(uri);
-      }
-    }
-  };
-
-  const takePhotoWithCamera = async () => {
-    setIsAddPhotoModalOpen(false);
-    const permission = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert('Permissão necessária', 'É preciso permitir o acesso à câmera para tirar fotos.');
-      return;
-    }
-
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      quality: 0.8,
-    });
-
-    if (!result.canceled && result.assets[0]?.uri) {
-      const uri = result.assets[0].uri;
-      const updated = await saveAnimalPhoto(animal.uuid, uri);
-      setPhotos(updated);
-      if (!profilePhoto && !animal.photoUrl) {
-        await setAnimalProfilePhoto(animal.uuid, uri);
-        setProfilePhoto(uri);
-      }
-    }
-  };
-
-  const activeProfileUri = profilePhoto || animal.photoUrl;
 
   const generalRows = [
     { label: 'Espécie', value: animal.species.name },
@@ -357,17 +299,7 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
 
       {/* Animal Profile Image Card (Overlapping header) */}
       <YStack items='center' style={{ marginTop: -60 }}>
-        <Pressable
-          accessibilityLabel={activeProfileUri ? `Foto de ${animal.name}` : 'Adicionar foto de perfil'}
-          onPress={() => {
-            if (!activeProfileUri) {
-              setIsAddPhotoModalOpen(true);
-            } else {
-              router.push(`/animal-photos/${animal.uuid}` as never);
-            }
-          }}
-          style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
-        >
+        <YStack>
           <Card
             borderWidth={3}
             elevation={6}
@@ -384,11 +316,11 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
             }}
             width={120}
           >
-            {activeProfileUri ? (
+            {animal.photoUrl ? (
               <Image
                 accessibilityLabel={`Foto de ${animal.name}`}
                 resizeMode='cover'
-                source={{ uri: activeProfileUri }}
+                source={{ uri: animal.photoUrl }}
                 style={{ height: '100%', width: '100%' }}
               />
             ) : (
@@ -400,7 +332,7 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
               />
             )}
           </Card>
-        </Pressable>
+        </YStack>
 
         {/* Name and Basic Info */}
         <YStack gap='$2' items='center' mt='$3' px='$5'>
@@ -443,96 +375,6 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
         {/* Separator Line */}
         <YStack my='$1' style={{ borderTopColor: colors.border, borderTopWidth: 1 }} />
 
-        {/* Fotos Section */}
-        <YStack gap='$3'>
-          <XStack items='center' justify='space-between'>
-            <XStack gap='$2' items='center'>
-              <Camera color={colors.primary} size={22} weight='fill' />
-              <Text fontSize={18} fontWeight='800' style={{ color: colors.text }}>
-                Fotos
-              </Text>
-            </XStack>
-            <Pressable
-              accessibilityLabel='Ver todas as fotos'
-              onPress={() => router.push(`/animal-photos/${animal.uuid}` as never)}
-              style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
-            >
-              <XStack gap='$1' items='center'>
-                <Text fontSize={14} fontWeight='700' style={{ color: colors.primary }}>
-                  Ver galeria
-                </Text>
-                <CaretRight color={colors.primary} size={18} weight='bold' />
-              </XStack>
-            </Pressable>
-          </XStack>
-
-          {photos.length > 0 ? (
-            <XStack gap='$2' items='center'>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <XStack gap='$2' py='$1'>
-                  {photos.map((uri) => (
-                    <Pressable
-                      key={uri}
-                      onPress={() => router.push(`/animal-photos/${animal.uuid}` as never)}
-                      style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
-                    >
-                      <Card
-                        borderWidth={1}
-                        height={72}
-                        overflow='hidden'
-                        rounded='$3'
-                        style={{ backgroundColor: colors.card, borderColor: colors.border }}
-                        width={72}
-                      >
-                        <Image resizeMode='cover' source={{ uri }} style={{ height: '100%', width: '100%' }} />
-                      </Card>
-                    </Pressable>
-                  ))}
-                </XStack>
-              </ScrollView>
-              <Pressable
-                accessibilityLabel='Acessar galeria de fotos'
-                onPress={() => router.push(`/animal-photos/${animal.uuid}` as never)}
-                style={({ pressed }) => ({
-                  alignItems: 'center',
-                  backgroundColor: colors.card,
-                  borderColor: colors.border,
-                  borderRadius: 12,
-                  borderWidth: 1,
-                  height: 72,
-                  justifyContent: 'center',
-                  opacity: pressed ? 0.72 : 1,
-                  width: 40,
-                })}
-              >
-                <CaretRight color={colors.text} size={22} weight='bold' />
-              </Pressable>
-            </XStack>
-          ) : (
-            <Pressable
-              onPress={() => setIsAddPhotoModalOpen(true)}
-              style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
-            >
-              <Card
-                borderWidth={1}
-                p='$4'
-                rounded='$4'
-                style={{ backgroundColor: colors.card, borderColor: colors.border }}
-              >
-                <XStack gap='$3' items='center' justify='center' py='$2'>
-                  <Camera color={colors.muted} size={24} />
-                  <Text fontSize={14} style={{ color: colors.muted, textAlign: 'center' }}>
-                    Nenhuma foto cadastrada. Clique para adicionar.
-                  </Text>
-                </XStack>
-              </Card>
-            </Pressable>
-          )}
-        </YStack>
-
-        {/* Separator Line */}
-        <YStack my='$1' style={{ borderTopColor: colors.border, borderTopWidth: 1 }} />
-
         {/* Anexos Section */}
         <YStack gap='$3'>
           <XStack items='center' justify='space-between'>
@@ -556,21 +398,74 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
             </Pressable>
           </XStack>
 
-          <Card
-            borderWidth={1}
-            p='$3'
-            rounded='$4'
-            style={{ backgroundColor: colors.card, borderColor: colors.border }}
-          >
-            <XStack items='center' justify='space-between'>
+          {recentAttachments.length === 0 ? (
+            <Card
+              borderWidth={1}
+              p='$3'
+              rounded='$4'
+              style={{ backgroundColor: colors.card, borderColor: colors.border }}
+            >
               <XStack gap='$3' items='center'>
                 <Paperclip color={colors.muted} size={20} />
                 <Text fontSize={14} style={{ color: colors.muted }}>
-                  Nenhum documento ou anexo anexado.
+                  Nenhuma foto ou documento anexado.
                 </Text>
               </XStack>
-            </XStack>
-          </Card>
+            </Card>
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <XStack gap='$2' py='$1'>
+                {recentAttachments.map((attachment) => (
+                  <Pressable
+                    key={attachment.uuid}
+                    onPress={() => router.push(`/animal-attachments/${animal.uuid}` as never)}
+                    style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
+                  >
+                    <Card
+                      borderWidth={1}
+                      height={76}
+                      overflow='hidden'
+                      rounded='$3'
+                      style={{ backgroundColor: colors.card, borderColor: colors.border }}
+                      width={76}
+                    >
+                      {isImageAttachment(attachment) ? (
+                        <Image
+                          resizeMode='cover'
+                          source={{ uri: attachment.url }}
+                          style={{ height: '100%', width: '100%' }}
+                        />
+                      ) : (
+                        <YStack flex={1} gap='$1' items='center' justify='center' p='$2'>
+                          <Paperclip color={colors.primary} size={22} weight='fill' />
+                          <Text fontSize={10} numberOfLines={2} style={{ color: colors.text, textAlign: 'center' }}>
+                            {getAttachmentName(attachment)}
+                          </Text>
+                        </YStack>
+                      )}
+                    </Card>
+                  </Pressable>
+                ))}
+                <Pressable
+                  accessibilityLabel='Ver todos os anexos'
+                  onPress={() => router.push(`/animal-attachments/${animal.uuid}` as never)}
+                  style={({ pressed }) => ({ opacity: pressed ? 0.72 : 1 })}
+                >
+                  <Card
+                    borderWidth={1}
+                    height={76}
+                    items='center'
+                    justify='center'
+                    rounded='$3'
+                    style={{ backgroundColor: colors.card, borderColor: colors.border }}
+                    width={76}
+                  >
+                    <CaretRight color={colors.primary} size={24} weight='bold' />
+                  </Card>
+                </Pressable>
+              </XStack>
+            </ScrollView>
+          )}
         </YStack>
 
         {/* Separator Line */}
@@ -641,10 +536,10 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
             </XStack>
           </Pressable>
 
-          {/* Adicionar Foto */}
+          {/* Adicionar Anexo */}
           <Pressable
-            accessibilityLabel='Adicionar Foto'
-            onPress={() => setIsAddPhotoModalOpen(true)}
+            accessibilityLabel='Adicionar Anexo'
+            onPress={() => router.push(`/animal-attachments/${animal.uuid}` as never)}
             style={({ pressed }) => ({
               alignItems: 'center',
               backgroundColor: '#106E3D',
@@ -657,7 +552,7 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
             <XStack gap='$2' items='center' justify='center'>
               <Plus color='#FFFFFF' size={20} weight='bold' />
               <Text fontSize={15} fontWeight='800' style={{ color: '#FFFFFF' }}>
-                Adicionar Foto
+                Adicionar Anexo
               </Text>
             </XStack>
           </Pressable>
@@ -686,126 +581,6 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
             </XStack>
           </Pressable>
         </YStack>
-
-        {/* Modal Source Selection (Camera vs Gallery) */}
-        <Modal
-          animationType='slide'
-          onRequestClose={() => setIsAddPhotoModalOpen(false)}
-          transparent
-          visible={isAddPhotoModalOpen}
-        >
-          <YStack flex={1} justify='flex-end' style={{ backgroundColor: 'rgba(2, 12, 22, 0.65)' }}>
-            <Card
-              borderWidth={1}
-              gap='$4'
-              p='$5'
-              rounded='$6'
-              style={{ backgroundColor: colors.card, borderColor: colors.border }}
-            >
-              <XStack items='center' justify='space-between'>
-                <Text fontSize={18} fontWeight='800' style={{ color: colors.text }}>
-                  Adicionar Foto
-                </Text>
-                <Pressable onPress={() => setIsAddPhotoModalOpen(false)}>
-                  <X color={colors.muted} size={24} />
-                </Pressable>
-              </XStack>
-
-              <Text fontSize={14} style={{ color: colors.muted }}>
-                Escolha a origem da foto para o animal:
-              </Text>
-
-              <YStack gap='$3'>
-                {/* Option 1: Camera */}
-                <Pressable
-                  accessibilityLabel='Tirar foto com a Câmera'
-                  onPress={() => void takePhotoWithCamera()}
-                  style={({ pressed }) => ({
-                    alignItems: 'center',
-                    backgroundColor: colors.cardMuted,
-                    borderColor: colors.border,
-                    borderRadius: 14,
-                    borderWidth: 1,
-                    flexDirection: 'row',
-                    gap: 12,
-                    opacity: pressed ? 0.76 : 1,
-                    padding: 16,
-                  })}
-                >
-                  <XStack
-                    height={44}
-                    items='center'
-                    justify='center'
-                    rounded='$3'
-                    style={{ backgroundColor: `${colors.primary}20` }}
-                    width={44}
-                  >
-                    <Camera color={colors.primary} size={24} weight='fill' />
-                  </XStack>
-                  <YStack flex={1}>
-                    <Text fontSize={15} fontWeight='700' style={{ color: colors.text }}>
-                      Tirar foto com a Câmera
-                    </Text>
-                    <Text fontSize={12} style={{ color: colors.muted }}>
-                      Usar a câmera do dispositivo agora
-                    </Text>
-                  </YStack>
-                </Pressable>
-
-                {/* Option 2: Gallery */}
-                <Pressable
-                  accessibilityLabel='Escolher do Armazenamento Interno'
-                  onPress={() => void pickImageFromGallery()}
-                  style={({ pressed }) => ({
-                    alignItems: 'center',
-                    backgroundColor: colors.cardMuted,
-                    borderColor: colors.border,
-                    borderRadius: 14,
-                    borderWidth: 1,
-                    flexDirection: 'row',
-                    gap: 12,
-                    opacity: pressed ? 0.76 : 1,
-                    padding: 16,
-                  })}
-                >
-                  <XStack
-                    height={44}
-                    items='center'
-                    justify='center'
-                    rounded='$3'
-                    style={{ backgroundColor: `${colors.primary}20` }}
-                    width={44}
-                  >
-                    <ImageIcon color={colors.primary} size={24} weight='fill' />
-                  </XStack>
-                  <YStack flex={1}>
-                    <Text fontSize={15} fontWeight='700' style={{ color: colors.text }}>
-                      Escolher da Galeria
-                    </Text>
-                    <Text fontSize={12} style={{ color: colors.muted }}>
-                      Selecionar foto do armazenamento interno
-                    </Text>
-                  </YStack>
-                </Pressable>
-              </YStack>
-
-              <Pressable
-                onPress={() => setIsAddPhotoModalOpen(false)}
-                style={({ pressed }) => ({
-                  alignItems: 'center',
-                  borderRadius: 12,
-                  marginTop: 4,
-                  opacity: pressed ? 0.7 : 1,
-                  paddingVertical: 12,
-                })}
-              >
-                <Text fontWeight='700' style={{ color: colors.muted }}>
-                  Cancelar
-                </Text>
-              </Pressable>
-            </Card>
-          </YStack>
-        </Modal>
 
         {/* Delete Confirmation Modal */}
         <Modal animationType='fade' onRequestClose={closeDeleteDialog} transparent visible={isDeleteDialogOpen}>

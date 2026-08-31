@@ -16,7 +16,6 @@ export default function RootLayout() {
           <Stack.Screen name='index' options={{ headerShown: false }} />
           <Stack.Screen name='animals' options={{ headerShown: false }} />
           <Stack.Screen name='animal-details/[animalUuid]' options={{ headerShown: false }} />
-          <Stack.Screen name='animal-photos/[animalUuid]' options={{ headerShown: false }} />
           <Stack.Screen name='animal-attachments/[animalUuid]' options={{ headerShown: false }} />
           <Stack.Screen name='animal-medicines/[animalUuid]' options={{ headerShown: false }} />
           <Stack.Screen name='animal-form' options={{ headerShown: false }} />
