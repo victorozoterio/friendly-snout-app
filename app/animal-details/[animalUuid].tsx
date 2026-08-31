@@ -1,52 +1,36 @@
 import { Redirect, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { ArrowClockwise, PawPrint, PencilSimple, Trash, WarningCircle } from 'phosphor-react-native';
+import {
+  ArrowClockwise,
+  ArrowLeft,
+  Calendar,
+  CaretRight,
+  Paperclip,
+  PencilSimple,
+  Plus,
+  Trash,
+  WarningCircle,
+} from 'phosphor-react-native';
 import { useCallback, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Modal, Pressable, RefreshControl, ScrollView } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  ImageBackground,
+  Modal,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card, Text, XStack, YStack } from 'tamagui';
 
 import { AnimalStageBadge } from '../../src/components/animal-stage-badge';
 import { useAppColors } from '../../src/components/main-layout';
-import { ScreenHeader } from '../../src/components/screen-header';
 import { useAuth } from '../../src/contexts/auth-context';
 import { type Animal, deleteAnimal, getAnimal, getAnimalErrorMessage } from '../../src/services/animals';
+import { type Attachment, getAnimalAttachments } from '../../src/services/attachments';
 
-function capitalize(value: string) {
-  return value.charAt(0).toUpperCase() + value.slice(1);
-}
-
-function formatDate(value: string) {
-  const date = new Date(value);
-  const day = String(date.getDate()).padStart(2, '0');
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  return `${day}/${month}/${date.getFullYear()}`;
-}
-
-function parseBirthDate(value: string) {
-  const [year, month, day] = value.slice(0, 10).split('-').map(Number);
-  return new Date(year, month - 1, day);
-}
-
-function formatBirthDate(value: string) {
-  const [year, month, day] = value.slice(0, 10).split('-');
-  return `${day}/${month}/${year}`;
-}
-
-function formatAge(birthDate: string) {
-  const birth = parseBirthDate(birthDate);
-  const now = new Date();
-  let months = (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth());
-  if (now.getDate() < birth.getDate()) months -= 1;
-  if (months < 1) return 'menos de 1 mês';
-
-  const years = Math.floor(months / 12);
-  const remainingMonths = months % 12;
-  const yearsLabel = years > 0 ? `${years} ${years === 1 ? 'ano' : 'anos'}` : '';
-  const monthsLabel = remainingMonths > 0 ? `${remainingMonths} ${remainingMonths === 1 ? 'mês' : 'meses'}` : '';
-
-  if (yearsLabel && monthsLabel) return `${yearsLabel} e ${monthsLabel}`;
-  return yearsLabel || monthsLabel;
-}
+import { safeCapitalize, safeFormatAge, safeFormatBirthDate, safeFormatDate } from '../../src/utils/date';
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   const colors = useAppColors();
@@ -94,6 +78,14 @@ function InfoCard({ rows, title }: { rows: { label: string; value: string }[]; t
   );
 }
 
+function isImageAttachment(attachment: Attachment) {
+  return ['jpeg', 'jpg', 'png', 'avif', 'webp'].includes(attachment.type.toLocaleLowerCase('pt-BR'));
+}
+
+function getAttachmentName(attachment: Attachment) {
+  return attachment.name?.trim() || 'Anexo';
+}
+
 function AnimalDetailsSkeleton() {
   const colors = useAppColors();
 
@@ -101,14 +93,14 @@ function AnimalDetailsSkeleton() {
     <YStack gap='$4' p='$5'>
       <Card
         borderWidth={1}
-        height={220}
+        height={200}
         rounded='$4'
         style={{ backgroundColor: colors.card, borderColor: colors.border }}
       />
       <XStack height={28} rounded='$3' style={{ backgroundColor: colors.cardMuted }} width={180} />
       <Card
         borderWidth={1}
-        height={260}
+        height={240}
         rounded='$4'
         style={{ backgroundColor: colors.card, borderColor: colors.border }}
       />
@@ -117,35 +109,56 @@ function AnimalDetailsSkeleton() {
   );
 }
 
-function AnimalDetailsError({ onRetry }: { onRetry: () => void }) {
+function AnimalDetailsError({ onRetry, onBack }: { onBack: () => void; onRetry: () => void }) {
   const colors = useAppColors();
 
   return (
     <YStack flex={1} gap='$3' items='center' justify='center' px='$6' style={{ minHeight: 320 }}>
-      <WarningCircle color={colors.warning} size={40} weight='fill' />
-      <Text fontSize={17} fontWeight='700' style={{ color: colors.text, textAlign: 'center' }}>
+      <WarningCircle color={colors.warning} size={48} weight='fill' />
+      <Text fontSize={18} fontWeight='800' style={{ color: colors.text, textAlign: 'center' }}>
         Não foi possível carregar os dados do animal.
       </Text>
-      <Text style={{ color: colors.muted, textAlign: 'center' }}>Verifique sua conexão e tente novamente.</Text>
-      <Pressable
-        accessibilityLabel='Tentar carregar os dados novamente'
-        onPress={onRetry}
-        style={({ pressed }) => ({
-          backgroundColor: colors.primary,
-          borderRadius: 12,
-          marginTop: 4,
-          opacity: pressed ? 0.75 : 1,
-          paddingHorizontal: 16,
-          paddingVertical: 12,
-        })}
-      >
-        <XStack gap='$2' items='center'>
-          <ArrowClockwise color='#FFFFFF' size={18} />
-          <Text fontWeight='700' style={{ color: '#FFFFFF' }}>
-            Tentar novamente
+      <Text style={{ color: colors.muted, textAlign: 'center' }}>
+        Verifique sua conexão ou se o animal ainda existe no sistema.
+      </Text>
+      <XStack gap='$3' mt='$2'>
+        <Pressable
+          accessibilityLabel='Voltar para a lista'
+          onPress={onBack}
+          style={({ pressed }) => ({
+            backgroundColor: colors.cardMuted,
+            borderColor: colors.border,
+            borderRadius: 12,
+            borderWidth: 1,
+            opacity: pressed ? 0.75 : 1,
+            paddingHorizontal: 16,
+            paddingVertical: 12,
+          })}
+        >
+          <Text fontWeight='700' style={{ color: colors.text }}>
+            Voltar
           </Text>
-        </XStack>
-      </Pressable>
+        </Pressable>
+
+        <Pressable
+          accessibilityLabel='Tentar carregar os dados novamente'
+          onPress={onRetry}
+          style={({ pressed }) => ({
+            backgroundColor: colors.primary,
+            borderRadius: 12,
+            opacity: pressed ? 0.75 : 1,
+            paddingHorizontal: 16,
+            paddingVertical: 12,
+          })}
+        >
+          <XStack gap='$2' items='center'>
+            <ArrowClockwise color='#FFFFFF' size={18} />
+            <Text fontWeight='700' style={{ color: '#FFFFFF' }}>
+              Tentar novamente
+            </Text>
+          </XStack>
+        </Pressable>
+      </XStack>
     </YStack>
   );
 }
@@ -156,8 +169,28 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [recentAttachments, setRecentAttachments] = useState<Attachment[]>([]);
+
   const notInformed = 'Não informado';
   const isFeline = animal.species.name.trim().toLocaleLowerCase('pt-BR') === 'gato';
+
+  const catPlaceholder = require('../../assets/profiles-cat.png');
+  const dogPlaceholder = require('../../assets/profiles-dog.png');
+
+  const loadRecentAttachments = useCallback(async () => {
+    try {
+      const response = await getAnimalAttachments(animal.uuid);
+      setRecentAttachments(response.data.slice(0, 3));
+    } catch {
+      setRecentAttachments([]);
+    }
+  }, [animal.uuid]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void loadRecentAttachments();
+    }, [loadRecentAttachments]),
+  );
 
   const closeDeleteDialog = () => {
     if (isDeleting) return;
@@ -184,12 +217,14 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
   const generalRows = [
     { label: 'Espécie', value: animal.species.name },
     { label: 'Raça', value: animal.breed.name },
-    { label: 'Sexo', value: capitalize(animal.sex) },
-    { label: 'Porte', value: capitalize(animal.size) },
+    { label: 'Sexo', value: safeCapitalize(animal.sex) },
+    { label: 'Porte', value: safeCapitalize(animal.size) },
     { label: 'Cor', value: animal.color },
     {
       label: 'Nascimento',
-      value: animal.birthDate ? `${formatBirthDate(animal.birthDate)} (${formatAge(animal.birthDate)})` : notInformed,
+      value: animal.birthDate
+        ? `${safeFormatBirthDate(animal.birthDate)}${safeFormatAge(animal.birthDate) ? ` (${safeFormatAge(animal.birthDate)})` : ''}`
+        : notInformed,
     },
   ];
 
@@ -197,8 +232,8 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
     { label: 'Castrado', value: animal.castrated ? 'Sim' : 'Não' },
     ...(isFeline
       ? [
-          { label: 'FIV', value: capitalize(animal.fiv) },
-          { label: 'FELV', value: capitalize(animal.felv) },
+          { label: 'FIV', value: safeCapitalize(animal.fiv) },
+          { label: 'FELV', value: safeCapitalize(animal.felv) },
         ]
       : []),
   ];
@@ -209,220 +244,454 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
   ];
 
   return (
-    <YStack gap='$5' p='$5' pt='$2'>
-      {animal.photoUrl ? (
-        <Image
-          accessibilityLabel={`Foto de ${animal.name}`}
-          resizeMode='cover'
-          source={{ uri: animal.photoUrl }}
-          style={{ borderRadius: 16, height: 220, width: '100%' }}
-        />
-      ) : (
-        <YStack
-          height={220}
-          items='center'
-          justify='center'
-          rounded='$4'
-          style={{ backgroundColor: colors.cardMuted, borderColor: colors.border, borderWidth: 1 }}
-        >
-          <PawPrint color={colors.primary} size={64} weight='fill' />
-        </YStack>
-      )}
-
-      <YStack gap='$2'>
-        <XStack gap='$3' items='center' justify='space-between'>
-          <Text flex={1} fontSize={26} fontWeight='800' numberOfLines={2} style={{ color: colors.text }}>
-            {animal.name}
-          </Text>
-          <AnimalStageBadge stage={animal.status} />
-        </XStack>
-        <Text fontSize={14} style={{ color: colors.muted }}>
-          {animal.species.name} • {animal.breed.name}
-        </Text>
-      </YStack>
-
-      <XStack gap='$3'>
-        <Pressable
-          accessibilityLabel={`Editar cadastro de ${animal.name}`}
-          onPress={() => router.push(`/edit-animal/${animal.uuid}` as never)}
-          style={({ pressed }) => ({
-            alignItems: 'center',
-            backgroundColor: `${colors.primary}16`,
-            borderColor: colors.primary,
-            borderRadius: 14,
-            borderWidth: 1,
-            flex: 1,
-            justifyContent: 'center',
-            opacity: pressed ? 0.72 : 1,
-            paddingHorizontal: 12,
-            paddingVertical: 13,
-          })}
-        >
-          <XStack gap='$2' items='center' justify='center'>
-            <PencilSimple color={colors.primary} size={20} weight='bold' />
-            <Text fontSize={15} fontWeight='800' style={{ color: colors.primary }}>
-              Editar
-            </Text>
-          </XStack>
-        </Pressable>
-
-        <Pressable
-          accessibilityLabel={`Excluir ${animal.name}`}
-          onPress={() => {
-            setDeleteError(null);
-            setIsDeleteDialogOpen(true);
-          }}
-          style={({ pressed }) => ({
-            alignItems: 'center',
-            backgroundColor: `${colors.danger}12`,
-            borderColor: colors.danger,
-            borderRadius: 14,
-            borderWidth: 1,
-            flex: 1,
-            justifyContent: 'center',
-            opacity: pressed ? 0.72 : 1,
-            paddingHorizontal: 12,
-            paddingVertical: 13,
-          })}
-        >
-          <XStack gap='$2' items='center' justify='center'>
-            <Trash color={colors.danger} size={20} weight='bold' />
-            <Text fontSize={15} fontWeight='800' style={{ color: colors.danger }}>
-              Excluir
-            </Text>
-          </XStack>
-        </Pressable>
-      </XStack>
-
-      <Modal animationType='fade' onRequestClose={closeDeleteDialog} transparent visible={isDeleteDialogOpen}>
-        <YStack flex={1} items='center' justify='center' px='$5' style={{ backgroundColor: 'rgba(2, 12, 22, 0.72)' }}>
-          <Card
-            borderWidth={1}
-            gap='$4'
-            maxWidth={420}
-            p='$5'
-            rounded='$5'
-            style={{ backgroundColor: colors.card, borderColor: colors.border }}
-            width='100%'
+    <YStack gap='$4' pb='$8'>
+      {/* Top Banner Header with Pattern */}
+      <ImageBackground
+        resizeMode='cover'
+        source={require('../../assets/bk-grnd.png')}
+        style={{
+          alignItems: 'center',
+          height: 150,
+          justifyContent: 'space-between',
+          paddingHorizontal: 16,
+          paddingTop: 16,
+          width: '100%',
+        }}
+      >
+        <XStack items='center' justify='space-between' width='100%'>
+          <Pressable
+            accessibilityLabel='Voltar'
+            onPress={() => router.back()}
+            style={({ pressed }) => ({
+              alignItems: 'center',
+              backgroundColor: 'rgba(12, 32, 54, 0.72)',
+              borderColor: 'rgba(255, 255, 255, 0.2)',
+              borderRadius: 14,
+              borderWidth: 1,
+              height: 44,
+              justifyContent: 'center',
+              opacity: pressed ? 0.76 : 1,
+              width: 44,
+            })}
           >
-            <YStack gap='$3' items='center'>
-              <XStack
-                height={52}
-                items='center'
-                justify='center'
-                rounded='$4'
-                style={{ backgroundColor: `${colors.danger}16` }}
-                width={52}
-              >
-                <Trash color={colors.danger} size={27} weight='fill' />
-              </XStack>
-              <YStack gap='$2'>
-                <Text fontSize={20} fontWeight='800' style={{ color: colors.text, textAlign: 'center' }}>
-                  Excluir animal?
-                </Text>
-                <Text fontSize={14} lineHeight={20} style={{ color: colors.muted, textAlign: 'center' }}>
-                  {animal.name} será removido permanentemente. Esta ação não pode ser desfeita.
-                </Text>
-              </YStack>
-            </YStack>
+            <ArrowLeft color='#FFFFFF' size={22} weight='bold' />
+          </Pressable>
 
-            {deleteError ? (
-              <Card
-                borderWidth={1}
-                p='$3'
-                rounded='$3'
-                style={{ backgroundColor: `${colors.danger}12`, borderColor: colors.danger }}
-              >
-                <XStack gap='$2' items='flex-start'>
-                  <WarningCircle color={colors.danger} size={20} weight='fill' />
-                  <Text flex={1} fontSize={13} lineHeight={19} style={{ color: colors.danger }}>
-                    {deleteError}
-                  </Text>
-                </XStack>
-              </Card>
-            ) : null}
+          <Pressable
+            accessibilityLabel={`Editar cadastro de ${animal.name}`}
+            onPress={() => router.push(`/edit-animal/${animal.uuid}` as never)}
+            style={({ pressed }) => ({
+              alignItems: 'center',
+              backgroundColor: 'rgba(12, 32, 54, 0.72)',
+              borderColor: 'rgba(255, 255, 255, 0.2)',
+              borderRadius: 14,
+              borderWidth: 1,
+              height: 44,
+              justifyContent: 'center',
+              opacity: pressed ? 0.76 : 1,
+              width: 44,
+            })}
+          >
+            <PencilSimple color='#FFFFFF' size={22} weight='bold' />
+          </Pressable>
+        </XStack>
+      </ImageBackground>
 
-            <XStack gap='$3'>
-              <Pressable
-                accessibilityLabel='Cancelar exclusão'
-                disabled={isDeleting}
-                onPress={closeDeleteDialog}
-                style={({ pressed }) => ({
-                  alignItems: 'center',
-                  backgroundColor: colors.cardMuted,
-                  borderColor: colors.border,
-                  borderRadius: 13,
-                  borderWidth: 1,
-                  flex: 1,
-                  justifyContent: 'center',
-                  opacity: isDeleting ? 0.55 : pressed ? 0.72 : 1,
-                  paddingHorizontal: 12,
-                  paddingVertical: 13,
-                })}
-              >
-                <Text fontSize={14} fontWeight='700' style={{ color: colors.text }}>
-                  Cancelar
-                </Text>
-              </Pressable>
-
-              <Pressable
-                accessibilityLabel={`Confirmar exclusão de ${animal.name}`}
-                disabled={isDeleting}
-                onPress={() => void handleDelete()}
-                style={({ pressed }) => ({
-                  alignItems: 'center',
-                  backgroundColor: colors.danger,
-                  borderRadius: 13,
-                  flex: 1,
-                  justifyContent: 'center',
-                  opacity: isDeleting ? 0.58 : pressed ? 0.78 : 1,
-                  paddingHorizontal: 12,
-                  paddingVertical: 13,
-                })}
-              >
-                <XStack gap='$2' items='center'>
-                  {isDeleting ? <ActivityIndicator color='#FFFFFF' size='small' /> : null}
-                  <Text fontSize={14} fontWeight='800' style={{ color: '#FFFFFF' }}>
-                    {isDeleting ? 'Excluindo...' : 'Excluir'}
-                  </Text>
-                </XStack>
-              </Pressable>
-            </XStack>
+      {/* Animal Profile Image Card (Overlapping header) */}
+      <YStack items='center' style={{ marginTop: -60 }}>
+        <YStack>
+          <Card
+            borderWidth={3}
+            elevation={6}
+            height={120}
+            overflow='hidden'
+            rounded='$6'
+            style={{
+              backgroundColor: colors.card,
+              borderColor: colors.background,
+              shadowColor: '#000000',
+              shadowOffset: { height: 4, width: 0 },
+              shadowOpacity: 0.25,
+              shadowRadius: 8,
+            }}
+            width={120}
+          >
+            {animal.photoUrl ? (
+              <Image
+                accessibilityLabel={`Foto de ${animal.name}`}
+                resizeMode='cover'
+                source={{ uri: animal.photoUrl }}
+                style={{ height: '100%', width: '100%' }}
+              />
+            ) : (
+              <Image
+                accessibilityLabel={`Avatar de ${animal.name}`}
+                resizeMode='contain'
+                source={isFeline ? catPlaceholder : dogPlaceholder}
+                style={{ height: '100%', width: '100%' }}
+              />
+            )}
           </Card>
         </YStack>
-      </Modal>
 
-      <InfoCard rows={generalRows} title='Informações gerais' />
-      <InfoCard rows={healthRows} title='Saúde' />
-      <InfoCard rows={identificationRows} title='Identificação' />
-
-      {animal.notes ? (
-        <YStack gap='$2'>
-          <Text fontSize={18} fontWeight='800' style={{ color: colors.text }}>
-            Observações
+        {/* Name and Basic Info */}
+        <YStack gap='$2' items='center' mt='$3' px='$5'>
+          <Text fontSize={26} fontWeight='800' style={{ color: colors.text, textAlign: 'center' }}>
+            {animal.name}
           </Text>
+          <XStack gap='$2' items='center'>
+            <AnimalStageBadge stage={animal.status} />
+          </XStack>
+          <Text fontSize={15} style={{ color: colors.muted, textAlign: 'center' }}>
+            {animal.species.name} • {animal.breed.name}
+          </Text>
+        </YStack>
+      </YStack>
+
+      <YStack gap='$5' px='$5'>
+        {/* Cadastral Info Cards */}
+        <InfoCard rows={generalRows} title='Informações gerais' />
+        <InfoCard rows={healthRows} title='Saúde' />
+        <InfoCard rows={identificationRows} title='Identificação' />
+
+        {animal.notes ? (
+          <YStack gap='$2'>
+            <Text fontSize={18} fontWeight='800' style={{ color: colors.text }}>
+              Observações
+            </Text>
+            <Card
+              borderWidth={1}
+              p='$3'
+              rounded='$4'
+              style={{ backgroundColor: colors.card, borderColor: colors.border }}
+            >
+              <Text fontSize={14} lineHeight={20} style={{ color: colors.text }}>
+                {animal.notes}
+              </Text>
+            </Card>
+          </YStack>
+        ) : null}
+
+        {/* Separator Line */}
+        <YStack my='$1' style={{ borderTopColor: colors.border, borderTopWidth: 1 }} />
+
+        {/* Anexos Section */}
+        <YStack gap='$3'>
+          <XStack items='center' justify='space-between'>
+            <XStack gap='$2' items='center'>
+              <Paperclip color={colors.primary} size={22} weight='fill' />
+              <Text fontSize={18} fontWeight='800' style={{ color: colors.text }}>
+                Anexos
+              </Text>
+            </XStack>
+            <Pressable
+              accessibilityLabel='Ver todos os anexos'
+              onPress={() => router.push(`/animal-attachments/${animal.uuid}` as never)}
+              style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+            >
+              <XStack gap='$1' items='center'>
+                <Text fontSize={14} fontWeight='700' style={{ color: colors.primary }}>
+                  Ver anexos
+                </Text>
+                <CaretRight color={colors.primary} size={18} weight='bold' />
+              </XStack>
+            </Pressable>
+          </XStack>
+
+          {recentAttachments.length === 0 ? (
+            <Card
+              borderWidth={1}
+              p='$3'
+              rounded='$4'
+              style={{ backgroundColor: colors.card, borderColor: colors.border }}
+            >
+              <XStack gap='$3' items='center'>
+                <Paperclip color={colors.muted} size={20} />
+                <Text fontSize={14} style={{ color: colors.muted }}>
+                  Nenhuma foto ou documento anexado.
+                </Text>
+              </XStack>
+            </Card>
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <XStack gap='$2' py='$1'>
+                {recentAttachments.map((attachment) => (
+                  <Pressable
+                    key={attachment.uuid}
+                    onPress={() => router.push(`/animal-attachments/${animal.uuid}` as never)}
+                    style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
+                  >
+                    <Card
+                      borderWidth={1}
+                      height={76}
+                      overflow='hidden'
+                      rounded='$3'
+                      style={{ backgroundColor: colors.card, borderColor: colors.border }}
+                      width={76}
+                    >
+                      {isImageAttachment(attachment) ? (
+                        <Image
+                          resizeMode='cover'
+                          source={{ uri: attachment.url }}
+                          style={{ height: '100%', width: '100%' }}
+                        />
+                      ) : (
+                        <YStack flex={1} gap='$1' items='center' justify='center' p='$2'>
+                          <Paperclip color={colors.primary} size={22} weight='fill' />
+                          <Text fontSize={10} numberOfLines={2} style={{ color: colors.text, textAlign: 'center' }}>
+                            {getAttachmentName(attachment)}
+                          </Text>
+                        </YStack>
+                      )}
+                    </Card>
+                  </Pressable>
+                ))}
+                <Pressable
+                  accessibilityLabel='Ver todos os anexos'
+                  onPress={() => router.push(`/animal-attachments/${animal.uuid}` as never)}
+                  style={({ pressed }) => ({ opacity: pressed ? 0.72 : 1 })}
+                >
+                  <Card
+                    borderWidth={1}
+                    height={76}
+                    items='center'
+                    justify='center'
+                    rounded='$3'
+                    style={{ backgroundColor: colors.card, borderColor: colors.border }}
+                    width={76}
+                  >
+                    <CaretRight color={colors.primary} size={24} weight='bold' />
+                  </Card>
+                </Pressable>
+              </XStack>
+            </ScrollView>
+          )}
+        </YStack>
+
+        {/* Separator Line */}
+        <YStack my='$1' style={{ borderTopColor: colors.border, borderTopWidth: 1 }} />
+
+        {/* Agenda / Medicamentos Section */}
+        <YStack gap='$3'>
+          <XStack items='center' justify='space-between'>
+            <XStack gap='$2' items='center'>
+              <Calendar color={colors.primary} size={22} weight='fill' />
+              <Text fontSize={18} fontWeight='800' style={{ color: colors.text }}>
+                Agenda
+              </Text>
+            </XStack>
+            <Pressable
+              accessibilityLabel='Ver histórico de medicamentos'
+              onPress={() => router.push('/medicines' as never)}
+              style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+            >
+              <XStack gap='$1' items='center'>
+                <Text fontSize={14} fontWeight='700' style={{ color: colors.primary }}>
+                  Ver tudo
+                </Text>
+                <CaretRight color={colors.primary} size={18} weight='bold' />
+              </XStack>
+            </Pressable>
+          </XStack>
+
+          {/* Placeholder of Medicine Applications */}
           <Card
             borderWidth={1}
-            p='$3'
+            p='$4'
             rounded='$4'
             style={{ backgroundColor: colors.card, borderColor: colors.border }}
           >
-            <Text fontSize={14} lineHeight={20} style={{ color: colors.text }}>
-              {animal.notes}
-            </Text>
+            <YStack gap='$2' items='center' py='$3'>
+              <Calendar color={colors.muted} size={32} />
+              <Text fontSize={15} fontWeight='700' style={{ color: colors.text, textAlign: 'center' }}>
+                Nenhuma aplicação registrada na agenda
+              </Text>
+              <Text fontSize={13} style={{ color: colors.muted, textAlign: 'center' }}>
+                Acompanhe e consulte o histórico de medicamentos aplicados ou agendados.
+              </Text>
+            </YStack>
           </Card>
         </YStack>
-      ) : null}
 
-      <Text fontSize={12} style={{ color: colors.muted, textAlign: 'center' }}>
-        Cadastrado em {formatDate(animal.createdAt)}
-      </Text>
+        {/* Action Buttons Section */}
+        <YStack gap='$3' mt='$4'>
+          {/* Agendar Medicamento */}
+          <Pressable
+            accessibilityLabel='Agendar Medicamento'
+            onPress={() => router.push('/medicines' as never)}
+            style={({ pressed }) => ({
+              alignItems: 'center',
+              backgroundColor: '#1E4E79',
+              borderRadius: 14,
+              opacity: pressed ? 0.78 : 1,
+              paddingHorizontal: 16,
+              paddingVertical: 14,
+            })}
+          >
+            <XStack gap='$2' items='center' justify='center'>
+              <Plus color='#FFFFFF' size={20} weight='bold' />
+              <Text fontSize={15} fontWeight='800' style={{ color: '#FFFFFF' }}>
+                Agendar Medicamento
+              </Text>
+            </XStack>
+          </Pressable>
+
+          {/* Adicionar Anexo */}
+          <Pressable
+            accessibilityLabel='Adicionar Anexo'
+            onPress={() => router.push(`/animal-attachments/${animal.uuid}` as never)}
+            style={({ pressed }) => ({
+              alignItems: 'center',
+              backgroundColor: '#106E3D',
+              borderRadius: 14,
+              opacity: pressed ? 0.78 : 1,
+              paddingHorizontal: 16,
+              paddingVertical: 14,
+            })}
+          >
+            <XStack gap='$2' items='center' justify='center'>
+              <Plus color='#FFFFFF' size={20} weight='bold' />
+              <Text fontSize={15} fontWeight='800' style={{ color: '#FFFFFF' }}>
+                Adicionar Anexo
+              </Text>
+            </XStack>
+          </Pressable>
+
+          {/* Apagar */}
+          <Pressable
+            accessibilityLabel={`Excluir ${animal.name}`}
+            onPress={() => {
+              setDeleteError(null);
+              setIsDeleteDialogOpen(true);
+            }}
+            style={({ pressed }) => ({
+              alignItems: 'center',
+              backgroundColor: '#A83232',
+              borderRadius: 14,
+              opacity: pressed ? 0.78 : 1,
+              paddingHorizontal: 16,
+              paddingVertical: 14,
+            })}
+          >
+            <XStack gap='$2' items='center' justify='center'>
+              <Trash color='#FFFFFF' size={20} weight='bold' />
+              <Text fontSize={15} fontWeight='800' style={{ color: '#FFFFFF' }}>
+                Apagar
+              </Text>
+            </XStack>
+          </Pressable>
+        </YStack>
+
+        {/* Delete Confirmation Modal */}
+        <Modal animationType='fade' onRequestClose={closeDeleteDialog} transparent visible={isDeleteDialogOpen}>
+          <YStack flex={1} items='center' justify='center' px='$5' style={{ backgroundColor: 'rgba(2, 12, 22, 0.72)' }}>
+            <Card
+              borderWidth={1}
+              gap='$4'
+              maxWidth={420}
+              p='$5'
+              rounded='$5'
+              style={{ backgroundColor: colors.card, borderColor: colors.border }}
+              width='100%'
+            >
+              <YStack gap='$3' items='center'>
+                <XStack
+                  height={52}
+                  items='center'
+                  justify='center'
+                  rounded='$4'
+                  style={{ backgroundColor: `${colors.danger}16` }}
+                  width={52}
+                >
+                  <Trash color={colors.danger} size={27} weight='fill' />
+                </XStack>
+                <YStack gap='$2'>
+                  <Text fontSize={20} fontWeight='800' style={{ color: colors.text, textAlign: 'center' }}>
+                    Excluir animal?
+                  </Text>
+                  <Text fontSize={14} lineHeight={20} style={{ color: colors.muted, textAlign: 'center' }}>
+                    {animal.name} será removido permanentemente. Esta ação não pode ser desfeita.
+                  </Text>
+                </YStack>
+              </YStack>
+
+              {deleteError ? (
+                <Card
+                  borderWidth={1}
+                  p='$3'
+                  rounded='$3'
+                  style={{ backgroundColor: `${colors.danger}12`, borderColor: colors.danger }}
+                >
+                  <XStack gap='$2' items='flex-start'>
+                    <WarningCircle color={colors.danger} size={20} weight='fill' />
+                    <Text flex={1} fontSize={13} lineHeight={19} style={{ color: colors.danger }}>
+                      {deleteError}
+                    </Text>
+                  </XStack>
+                </Card>
+              ) : null}
+
+              <XStack gap='$3'>
+                <Pressable
+                  accessibilityLabel='Cancelar exclusão'
+                  disabled={isDeleting}
+                  onPress={closeDeleteDialog}
+                  style={({ pressed }) => ({
+                    alignItems: 'center',
+                    backgroundColor: colors.cardMuted,
+                    borderColor: colors.border,
+                    borderRadius: 13,
+                    borderWidth: 1,
+                    flex: 1,
+                    justifyContent: 'center',
+                    opacity: isDeleting ? 0.55 : pressed ? 0.72 : 1,
+                    paddingHorizontal: 12,
+                    paddingVertical: 13,
+                  })}
+                >
+                  <Text fontSize={14} fontWeight='700' style={{ color: colors.text }}>
+                    Cancelar
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  accessibilityLabel={`Confirmar exclusão de ${animal.name}`}
+                  disabled={isDeleting}
+                  onPress={() => void handleDelete()}
+                  style={({ pressed }) => ({
+                    alignItems: 'center',
+                    backgroundColor: colors.danger,
+                    borderRadius: 13,
+                    flex: 1,
+                    justifyContent: 'center',
+                    opacity: isDeleting ? 0.58 : pressed ? 0.78 : 1,
+                    paddingHorizontal: 12,
+                    paddingVertical: 13,
+                  })}
+                >
+                  <XStack gap='$2' items='center'>
+                    {isDeleting ? <ActivityIndicator color='#FFFFFF' size='small' /> : null}
+                    <Text fontSize={14} fontWeight='800' style={{ color: '#FFFFFF' }}>
+                      {isDeleting ? 'Excluindo...' : 'Excluir'}
+                    </Text>
+                  </XStack>
+                </Pressable>
+              </XStack>
+            </Card>
+          </YStack>
+        </Modal>
+
+        <Text fontSize={12} style={{ color: colors.muted, textAlign: 'center' }}>
+          Cadastrado em {safeFormatDate(animal.createdAt)}
+        </Text>
+      </YStack>
     </YStack>
   );
 }
 
 function AnimalDetails() {
   const { animalUuid } = useLocalSearchParams<{ animalUuid: string }>();
+  const router = useRouter();
   const colors = useAppColors();
   const [animal, setAnimal] = useState<Animal | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -432,7 +701,11 @@ function AnimalDetails() {
 
   const loadAnimal = useCallback(
     async (isManualRefresh = false) => {
-      if (!animalUuid) return;
+      if (!animalUuid) {
+        setHasError(true);
+        setIsLoading(false);
+        return;
+      }
 
       if (isManualRefresh || hasLoadedAnimal.current) setIsRefreshing(true);
       else setIsLoading(true);
@@ -461,7 +734,6 @@ function AnimalDetails() {
 
   return (
     <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ backgroundColor: colors.background, flex: 1 }}>
-      <ScreenHeader description='Detalhes do animal' title={animal?.name ?? 'Animal'} />
       <ScrollView
         contentContainerStyle={{ flexGrow: 1 }}
         refreshControl={
@@ -474,11 +746,13 @@ function AnimalDetails() {
         }
       >
         {isLoading && !animal ? <AnimalDetailsSkeleton /> : null}
-        {hasError && !animal ? <AnimalDetailsError onRetry={() => void loadAnimal()} /> : null}
+        {hasError && !animal ? (
+          <AnimalDetailsError onBack={() => router.back()} onRetry={() => void loadAnimal()} />
+        ) : null}
         {animal ? (
           <YStack>
             {hasError ? (
-              <Text fontSize={13} px='$5' style={{ color: colors.muted, textAlign: 'center' }}>
+              <Text fontSize={13} px='$5' py='$2' style={{ color: colors.muted, textAlign: 'center' }}>
                 Não foi possível atualizar agora. Os últimos dados carregados continuam visíveis.
               </Text>
             ) : null}
