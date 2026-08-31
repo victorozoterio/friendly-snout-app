@@ -1,14 +1,14 @@
 import { Redirect, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import {
-  ArrowClockwise,
-  ArrowLeft,
-  Calendar,
-  CaretRight,
-  Paperclip,
-  PencilSimple,
-  Plus,
-  Trash,
-  WarningCircle,
+  ArrowClockwiseIcon,
+  ArrowLeftIcon,
+  CalendarIcon,
+  CaretRightIcon,
+  PaperclipIcon,
+  PencilSimpleIcon,
+  PlusIcon,
+  TrashIcon,
+  WarningCircleIcon,
 } from 'phosphor-react-native';
 import { useCallback, useRef, useState } from 'react';
 import {
@@ -27,9 +27,11 @@ import { Card, Text, XStack, YStack } from 'tamagui';
 import { AnimalStageBadge } from '../../src/components/animal-stage-badge';
 import { useAppColors } from '../../src/components/main-layout';
 import { useAuth } from '../../src/contexts/auth-context';
+import { animalRoutes, routes } from '../../src/routes';
 import { type Animal, deleteAnimal, getAnimal, getAnimalErrorMessage } from '../../src/services/animals';
 import { type Attachment, getAnimalAttachments } from '../../src/services/attachments';
-
+import { actionColors, effectColors, palette } from '../../src/theme';
+import { getAttachmentName, isImageAttachment } from '../../src/utils/attachment';
 import { safeCapitalize, safeFormatAge, safeFormatBirthDate, safeFormatDate } from '../../src/utils/date';
 
 function InfoRow({ label, value }: { label: string; value: string }) {
@@ -78,14 +80,6 @@ function InfoCard({ rows, title }: { rows: { label: string; value: string }[]; t
   );
 }
 
-function isImageAttachment(attachment: Attachment) {
-  return ['jpeg', 'jpg', 'png', 'avif', 'webp'].includes(attachment.type.toLocaleLowerCase('pt-BR'));
-}
-
-function getAttachmentName(attachment: Attachment) {
-  return attachment.name?.trim() || 'Anexo';
-}
-
 function AnimalDetailsSkeleton() {
   const colors = useAppColors();
 
@@ -114,7 +108,7 @@ function AnimalDetailsError({ onRetry, onBack }: { onBack: () => void; onRetry: 
 
   return (
     <YStack flex={1} gap='$3' items='center' justify='center' px='$6' style={{ minHeight: 320 }}>
-      <WarningCircle color={colors.warning} size={48} weight='fill' />
+      <WarningCircleIcon color={colors.warning} size={48} weight='fill' />
       <Text fontSize={18} fontWeight='800' style={{ color: colors.text, textAlign: 'center' }}>
         Não foi possível carregar os dados do animal.
       </Text>
@@ -152,8 +146,8 @@ function AnimalDetailsError({ onRetry, onBack }: { onBack: () => void; onRetry: 
           })}
         >
           <XStack gap='$2' items='center'>
-            <ArrowClockwise color='#FFFFFF' size={18} />
-            <Text fontWeight='700' style={{ color: '#FFFFFF' }}>
+            <ArrowClockwiseIcon color={palette.neutral0} size={18} />
+            <Text fontWeight='700' style={{ color: palette.neutral0 }}>
               Tentar novamente
             </Text>
           </XStack>
@@ -206,7 +200,7 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
       await deleteAnimal(animal.uuid);
       setIsDeleteDialogOpen(false);
       Alert.alert('Animal excluído', `${animal.name} foi removido com sucesso.`);
-      router.dismissTo('/animals' as never);
+      router.dismissTo(routes.animals);
     } catch (error: unknown) {
       setDeleteError(getAnimalErrorMessage(error, 'Não foi possível excluir o animal. Tente novamente.'));
     } finally {
@@ -264,8 +258,8 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
             onPress={() => router.back()}
             style={({ pressed }) => ({
               alignItems: 'center',
-              backgroundColor: 'rgba(12, 32, 54, 0.72)',
-              borderColor: 'rgba(255, 255, 255, 0.2)',
+              backgroundColor: effectColors.imageHeaderButton,
+              borderColor: effectColors.imageHeaderButtonBorder,
               borderRadius: 14,
               borderWidth: 1,
               height: 44,
@@ -274,16 +268,16 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
               width: 44,
             })}
           >
-            <ArrowLeft color='#FFFFFF' size={22} weight='bold' />
+            <ArrowLeftIcon color={palette.neutral0} size={22} weight='bold' />
           </Pressable>
 
           <Pressable
             accessibilityLabel={`Editar cadastro de ${animal.name}`}
-            onPress={() => router.push(`/edit-animal/${animal.uuid}` as never)}
+            onPress={() => router.push(animalRoutes.edit(animal.uuid))}
             style={({ pressed }) => ({
               alignItems: 'center',
-              backgroundColor: 'rgba(12, 32, 54, 0.72)',
-              borderColor: 'rgba(255, 255, 255, 0.2)',
+              backgroundColor: effectColors.imageHeaderButton,
+              borderColor: effectColors.imageHeaderButtonBorder,
               borderRadius: 14,
               borderWidth: 1,
               height: 44,
@@ -292,7 +286,7 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
               width: 44,
             })}
           >
-            <PencilSimple color='#FFFFFF' size={22} weight='bold' />
+            <PencilSimpleIcon color={palette.neutral0} size={22} weight='bold' />
           </Pressable>
         </XStack>
       </ImageBackground>
@@ -309,7 +303,7 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
             style={{
               backgroundColor: colors.card,
               borderColor: colors.background,
-              shadowColor: '#000000',
+              shadowColor: palette.black,
               shadowOffset: { height: 4, width: 0 },
               shadowOpacity: 0.25,
               shadowRadius: 8,
@@ -379,21 +373,21 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
         <YStack gap='$3'>
           <XStack items='center' justify='space-between'>
             <XStack gap='$2' items='center'>
-              <Paperclip color={colors.primary} size={22} weight='fill' />
+              <PaperclipIcon color={colors.primary} size={22} weight='fill' />
               <Text fontSize={18} fontWeight='800' style={{ color: colors.text }}>
                 Anexos
               </Text>
             </XStack>
             <Pressable
               accessibilityLabel='Ver todos os anexos'
-              onPress={() => router.push(`/animal-attachments/${animal.uuid}` as never)}
+              onPress={() => router.push(animalRoutes.attachments(animal.uuid))}
               style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
             >
               <XStack gap='$1' items='center'>
                 <Text fontSize={14} fontWeight='700' style={{ color: colors.primary }}>
                   Ver anexos
                 </Text>
-                <CaretRight color={colors.primary} size={18} weight='bold' />
+                <CaretRightIcon color={colors.primary} size={18} weight='bold' />
               </XStack>
             </Pressable>
           </XStack>
@@ -406,7 +400,7 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
               style={{ backgroundColor: colors.card, borderColor: colors.border }}
             >
               <XStack gap='$3' items='center'>
-                <Paperclip color={colors.muted} size={20} />
+                <PaperclipIcon color={colors.muted} size={20} />
                 <Text fontSize={14} style={{ color: colors.muted }}>
                   Nenhuma foto ou documento anexado.
                 </Text>
@@ -418,7 +412,7 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
                 {recentAttachments.map((attachment) => (
                   <Pressable
                     key={attachment.uuid}
-                    onPress={() => router.push(`/animal-attachments/${animal.uuid}` as never)}
+                    onPress={() => router.push(animalRoutes.attachments(animal.uuid))}
                     style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
                   >
                     <Card
@@ -437,7 +431,7 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
                         />
                       ) : (
                         <YStack flex={1} gap='$1' items='center' justify='center' p='$2'>
-                          <Paperclip color={colors.primary} size={22} weight='fill' />
+                          <PaperclipIcon color={colors.primary} size={22} weight='fill' />
                           <Text fontSize={10} numberOfLines={2} style={{ color: colors.text, textAlign: 'center' }}>
                             {getAttachmentName(attachment)}
                           </Text>
@@ -448,7 +442,7 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
                 ))}
                 <Pressable
                   accessibilityLabel='Ver todos os anexos'
-                  onPress={() => router.push(`/animal-attachments/${animal.uuid}` as never)}
+                  onPress={() => router.push(animalRoutes.attachments(animal.uuid))}
                   style={({ pressed }) => ({ opacity: pressed ? 0.72 : 1 })}
                 >
                   <Card
@@ -460,7 +454,7 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
                     style={{ backgroundColor: colors.card, borderColor: colors.border }}
                     width={76}
                   >
-                    <CaretRight color={colors.primary} size={24} weight='bold' />
+                    <CaretRightIcon color={colors.primary} size={24} weight='bold' />
                   </Card>
                 </Pressable>
               </XStack>
@@ -475,21 +469,21 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
         <YStack gap='$3'>
           <XStack items='center' justify='space-between'>
             <XStack gap='$2' items='center'>
-              <Calendar color={colors.primary} size={22} weight='fill' />
+              <CalendarIcon color={colors.primary} size={22} weight='fill' />
               <Text fontSize={18} fontWeight='800' style={{ color: colors.text }}>
                 Agenda
               </Text>
             </XStack>
             <Pressable
               accessibilityLabel='Ver histórico de medicamentos'
-              onPress={() => router.push('/medicines' as never)}
+              onPress={() => router.push(routes.medicines)}
               style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
             >
               <XStack gap='$1' items='center'>
                 <Text fontSize={14} fontWeight='700' style={{ color: colors.primary }}>
                   Ver tudo
                 </Text>
-                <CaretRight color={colors.primary} size={18} weight='bold' />
+                <CaretRightIcon color={colors.primary} size={18} weight='bold' />
               </XStack>
             </Pressable>
           </XStack>
@@ -502,7 +496,7 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
             style={{ backgroundColor: colors.card, borderColor: colors.border }}
           >
             <YStack gap='$2' items='center' py='$3'>
-              <Calendar color={colors.muted} size={32} />
+              <CalendarIcon color={colors.muted} size={32} />
               <Text fontSize={15} fontWeight='700' style={{ color: colors.text, textAlign: 'center' }}>
                 Nenhuma aplicação registrada na agenda
               </Text>
@@ -518,10 +512,10 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
           {/* Agendar Medicamento */}
           <Pressable
             accessibilityLabel='Agendar Medicamento'
-            onPress={() => router.push('/medicines' as never)}
+            onPress={() => router.push(routes.medicines)}
             style={({ pressed }) => ({
               alignItems: 'center',
-              backgroundColor: '#1E4E79',
+              backgroundColor: actionColors.medicine,
               borderRadius: 14,
               opacity: pressed ? 0.78 : 1,
               paddingHorizontal: 16,
@@ -529,8 +523,8 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
             })}
           >
             <XStack gap='$2' items='center' justify='center'>
-              <Plus color='#FFFFFF' size={20} weight='bold' />
-              <Text fontSize={15} fontWeight='800' style={{ color: '#FFFFFF' }}>
+              <PlusIcon color={palette.neutral0} size={20} weight='bold' />
+              <Text fontSize={15} fontWeight='800' style={{ color: palette.neutral0 }}>
                 Agendar Medicamento
               </Text>
             </XStack>
@@ -539,10 +533,10 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
           {/* Adicionar Anexo */}
           <Pressable
             accessibilityLabel='Adicionar Anexo'
-            onPress={() => router.push(`/animal-attachments/${animal.uuid}` as never)}
+            onPress={() => router.push(animalRoutes.attachments(animal.uuid))}
             style={({ pressed }) => ({
               alignItems: 'center',
-              backgroundColor: '#106E3D',
+              backgroundColor: actionColors.attachment,
               borderRadius: 14,
               opacity: pressed ? 0.78 : 1,
               paddingHorizontal: 16,
@@ -550,8 +544,8 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
             })}
           >
             <XStack gap='$2' items='center' justify='center'>
-              <Plus color='#FFFFFF' size={20} weight='bold' />
-              <Text fontSize={15} fontWeight='800' style={{ color: '#FFFFFF' }}>
+              <PlusIcon color={palette.neutral0} size={20} weight='bold' />
+              <Text fontSize={15} fontWeight='800' style={{ color: palette.neutral0 }}>
                 Adicionar Anexo
               </Text>
             </XStack>
@@ -566,7 +560,7 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
             }}
             style={({ pressed }) => ({
               alignItems: 'center',
-              backgroundColor: '#A83232',
+              backgroundColor: actionColors.destructive,
               borderRadius: 14,
               opacity: pressed ? 0.78 : 1,
               paddingHorizontal: 16,
@@ -574,8 +568,8 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
             })}
           >
             <XStack gap='$2' items='center' justify='center'>
-              <Trash color='#FFFFFF' size={20} weight='bold' />
-              <Text fontSize={15} fontWeight='800' style={{ color: '#FFFFFF' }}>
+              <TrashIcon color={palette.neutral0} size={20} weight='bold' />
+              <Text fontSize={15} fontWeight='800' style={{ color: palette.neutral0 }}>
                 Apagar
               </Text>
             </XStack>
@@ -584,7 +578,13 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
 
         {/* Delete Confirmation Modal */}
         <Modal animationType='fade' onRequestClose={closeDeleteDialog} transparent visible={isDeleteDialogOpen}>
-          <YStack flex={1} items='center' justify='center' px='$5' style={{ backgroundColor: 'rgba(2, 12, 22, 0.72)' }}>
+          <YStack
+            flex={1}
+            items='center'
+            justify='center'
+            px='$5'
+            style={{ backgroundColor: effectColors.modalOverlay }}
+          >
             <Card
               borderWidth={1}
               gap='$4'
@@ -603,7 +603,7 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
                   style={{ backgroundColor: `${colors.danger}16` }}
                   width={52}
                 >
-                  <Trash color={colors.danger} size={27} weight='fill' />
+                  <TrashIcon color={colors.danger} size={27} weight='fill' />
                 </XStack>
                 <YStack gap='$2'>
                   <Text fontSize={20} fontWeight='800' style={{ color: colors.text, textAlign: 'center' }}>
@@ -623,7 +623,7 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
                   style={{ backgroundColor: `${colors.danger}12`, borderColor: colors.danger }}
                 >
                   <XStack gap='$2' items='flex-start'>
-                    <WarningCircle color={colors.danger} size={20} weight='fill' />
+                    <WarningCircleIcon color={colors.danger} size={20} weight='fill' />
                     <Text flex={1} fontSize={13} lineHeight={19} style={{ color: colors.danger }}>
                       {deleteError}
                     </Text>
@@ -670,8 +670,8 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
                   })}
                 >
                   <XStack gap='$2' items='center'>
-                    {isDeleting ? <ActivityIndicator color='#FFFFFF' size='small' /> : null}
-                    <Text fontSize={14} fontWeight='800' style={{ color: '#FFFFFF' }}>
+                    {isDeleting ? <ActivityIndicator color={palette.neutral0} size='small' /> : null}
+                    <Text fontSize={14} fontWeight='800' style={{ color: palette.neutral0 }}>
                       {isDeleting ? 'Excluindo...' : 'Excluir'}
                     </Text>
                   </XStack>
@@ -768,7 +768,7 @@ export default function AnimalDetailsScreen() {
   const { status } = useAuth();
 
   if (status === 'loading') return null;
-  if (status === 'unauthenticated') return <Redirect href='/login' />;
+  if (status === 'unauthenticated') return <Redirect href={routes.login} />;
 
   return <AnimalDetails />;
 }

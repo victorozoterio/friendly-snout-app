@@ -1,14 +1,12 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
-
-import { API_KEY, API_URL } from '../config/env';
 import { tokenStorage } from './auth/storage';
 
 type RetriableRequest = InternalAxiosRequestConfig & { _retry?: boolean };
 
-export const api = axios.create({ baseURL: API_URL });
+export const api = axios.create({ baseURL: process.env.EXPO_PUBLIC_API_URL });
 
 api.interceptors.request.use(async (config) => {
-  if (API_KEY) config.headers.set('x-api-key', API_KEY);
+  if (process.env.EXPO_PUBLIC_API_KEY) config.headers.set('x-api-key', process.env.EXPO_PUBLIC_API_KEY);
   if (config.url?.includes('/auth/refresh-token')) return config;
 
   const accessToken = await tokenStorage.getAccessToken();

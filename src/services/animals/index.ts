@@ -1,11 +1,7 @@
 export { getAnimalErrorMessage } from './errors';
-export type { AnimalFormFieldErrors, AnimalFormValues } from './schema';
-export {
-  emptyAnimalFormValues,
-  getAnimalFormSchema,
-  toApiBirthDate,
-  toFormBirthDate,
-} from './schema';
+export { type AnimalFormFieldErrors, type AnimalFormValues, emptyAnimalFormValues } from './form.types';
+export { toApiBirthDate, toFormBirthDate } from './form-date';
+export { getAnimalFormSchema } from './schema';
 export {
   createAnimal,
   deleteAnimal,

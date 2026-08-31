@@ -1,12 +1,12 @@
 import { Redirect, useFocusEffect, useRouter } from 'expo-router';
 import {
-  ArrowClockwise,
-  CaretRight,
-  MagnifyingGlass,
-  PawPrint,
-  Plus,
-  WarningCircle,
-  XCircle,
+  ArrowClockwiseIcon,
+  CaretRightIcon,
+  MagnifyingGlassIcon,
+  PawPrintIcon,
+  PlusIcon,
+  WarningCircleIcon,
+  XCircleIcon,
 } from 'phosphor-react-native';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Image, Pressable, RefreshControl, ScrollView, TextInput } from 'react-native';
@@ -15,7 +15,9 @@ import { Card, Text, XStack, YStack } from 'tamagui';
 import { AnimalStageBadge, useAnimalStageColors } from '../src/components/animal-stage-badge';
 import { MainLayout, useAppColors } from '../src/components/main-layout';
 import { useAuth } from '../src/contexts/auth-context';
+import { animalRoutes, routes } from '../src/routes';
 import { type Animal, type AnimalStage, getAnimals, type PaginatedAnimalsMeta } from '../src/services/animals';
+import { palette } from '../src/theme';
 
 type StageFilter = AnimalStage | 'all';
 
@@ -53,7 +55,7 @@ function AnimalCard({ animal, onPress }: { animal: Animal; onPress: () => void }
               style={{ backgroundColor: colors.cardMuted }}
               width={60}
             >
-              <PawPrint color={colors.primary} size={28} weight='fill' />
+              <PawPrintIcon color={colors.primary} size={28} weight='fill' />
             </XStack>
           )}
           <YStack flex={1} gap='$1'>
@@ -61,7 +63,7 @@ function AnimalCard({ animal, onPress }: { animal: Animal; onPress: () => void }
               <Text flex={1} fontSize={17} fontWeight='800' numberOfLines={1} style={{ color: colors.text }}>
                 {animal.name}
               </Text>
-              <CaretRight color={colors.muted} size={18} weight='bold' />
+              <CaretRightIcon color={colors.muted} size={18} weight='bold' />
             </XStack>
             <Text fontSize={13} numberOfLines={1} style={{ color: colors.muted }}>
               {animal.species.name} • {animal.breed.name}
@@ -103,7 +105,7 @@ function AnimalsError({ onRetry }: { onRetry: () => void }) {
 
   return (
     <YStack flex={1} gap='$3' items='center' justify='center' px='$6' style={{ minHeight: 260 }}>
-      <WarningCircle color={colors.warning} size={40} weight='fill' />
+      <WarningCircleIcon color={colors.warning} size={40} weight='fill' />
       <Text fontSize={17} fontWeight='700' style={{ color: colors.text, textAlign: 'center' }}>
         Não foi possível carregar os animais.
       </Text>
@@ -121,8 +123,8 @@ function AnimalsError({ onRetry }: { onRetry: () => void }) {
         })}
       >
         <XStack gap='$2' items='center'>
-          <ArrowClockwise color='#FFFFFF' size={18} />
-          <Text fontWeight='700' style={{ color: '#FFFFFF' }}>
+          <ArrowClockwiseIcon color={palette.neutral0} size={18} />
+          <Text fontWeight='700' style={{ color: palette.neutral0 }}>
             Tentar novamente
           </Text>
         </XStack>
@@ -136,7 +138,7 @@ function AnimalsEmpty({ hasActiveFilters }: { hasActiveFilters: boolean }) {
 
   return (
     <YStack flex={1} gap='$3' items='center' justify='center' px='$6' style={{ minHeight: 260 }}>
-      <PawPrint color={colors.muted} size={44} weight='fill' />
+      <PawPrintIcon color={colors.muted} size={44} weight='fill' />
       <Text fontSize={17} fontWeight='700' style={{ color: colors.text, textAlign: 'center' }}>
         {hasActiveFilters ? 'Nenhum animal encontrado' : 'Nenhum animal cadastrado'}
       </Text>
@@ -254,7 +256,7 @@ function AnimalsList() {
             rounded='$4'
             style={{ backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }}
           >
-            <MagnifyingGlass color={colors.muted} size={20} />
+            <MagnifyingGlassIcon color={colors.muted} size={20} />
             <TextInput
               accessibilityLabel='Buscar animal pelo nome'
               onChangeText={handleSearchChange}
@@ -265,7 +267,7 @@ function AnimalsList() {
             />
             {searchTerm.length > 0 ? (
               <Pressable accessibilityLabel='Limpar busca' onPress={clearSearch}>
-                <XCircle color={colors.muted} size={20} weight='fill' />
+                <XCircleIcon color={colors.muted} size={20} weight='fill' />
               </Pressable>
             ) : null}
           </XStack>
@@ -349,14 +351,14 @@ function AnimalsList() {
               />
             }
             renderItem={({ item }) => (
-              <AnimalCard animal={item} onPress={() => router.push(`/animal-details/${item.uuid}` as never)} />
+              <AnimalCard animal={item} onPress={() => router.push(animalRoutes.details(item.uuid))} />
             )}
           />
         )}
 
         <Pressable
           accessibilityLabel='Cadastrar novo animal'
-          onPress={() => router.push('/animal-form' as never)}
+          onPress={() => router.push(routes.animalForm)}
           style={({ pressed }) => ({
             backgroundColor: colors.primary,
             borderRadius: 28,
@@ -367,15 +369,15 @@ function AnimalsList() {
             paddingVertical: 14,
             position: 'absolute',
             right: 20,
-            shadowColor: '#000000',
+            shadowColor: palette.black,
             shadowOffset: { height: 3, width: 0 },
             shadowOpacity: 0.25,
             shadowRadius: 8,
           })}
         >
           <XStack gap='$2' items='center'>
-            <Plus color='#FFFFFF' size={20} weight='bold' />
-            <Text fontSize={15} fontWeight='700' style={{ color: '#FFFFFF' }}>
+            <PlusIcon color={palette.neutral0} size={20} weight='bold' />
+            <Text fontSize={15} fontWeight='700' style={{ color: palette.neutral0 }}>
               Novo animal
             </Text>
           </XStack>
@@ -389,7 +391,7 @@ export default function Animals() {
   const { status } = useAuth();
 
   if (status === 'loading') return null;
-  if (status === 'unauthenticated') return <Redirect href='/login' />;
+  if (status === 'unauthenticated') return <Redirect href={routes.login} />;
 
   return <AnimalsList />;
 }

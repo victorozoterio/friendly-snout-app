@@ -2,28 +2,26 @@ import { Stack } from 'expo-router';
 import { useColorScheme } from 'react-native';
 
 import { AuthProvider } from '../src/contexts/auth-context';
-import { AppThemeProvider } from '../src/theme';
+import { routeNames } from '../src/routes';
+import { AppThemeProvider, appColors } from '../src/theme';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  const backgroundColor = colorScheme === 'dark' ? '#061827' : '#E6EEF6';
+  const backgroundColor = appColors[colorScheme === 'dark' ? 'dark' : 'light'].background;
 
   return (
     <AppThemeProvider>
       <AuthProvider>
         <Stack screenOptions={{ animation: 'fade', contentStyle: { backgroundColor } }}>
-          <Stack.Screen name='login' options={{ headerShown: false }} />
-          <Stack.Screen name='index' options={{ headerShown: false }} />
-          <Stack.Screen name='animals' options={{ headerShown: false }} />
-          <Stack.Screen name='animal-details/[animalUuid]' options={{ headerShown: false }} />
-          <Stack.Screen name='animal-attachments/[animalUuid]' options={{ headerShown: false }} />
-          <Stack.Screen name='animal-medicines/[animalUuid]' options={{ headerShown: false }} />
-          <Stack.Screen name='animal-form' options={{ headerShown: false }} />
-          <Stack.Screen name='edit-animal/[animalUuid]' options={{ headerShown: false }} />
-          <Stack.Screen name='medicines' options={{ headerShown: false }} />
-          <Stack.Screen name='form' options={{ title: 'Form' }} />
-          <Stack.Screen name='profile' options={{ title: 'Profile' }} />
-          <Stack.Screen name='register' options={{ title: 'Register' }} />
+          <Stack.Screen name={routeNames.login} options={{ headerShown: false }} />
+          <Stack.Screen name={routeNames.home} options={{ headerShown: false }} />
+          <Stack.Screen name={routeNames.animals} options={{ headerShown: false }} />
+          <Stack.Screen name={routeNames.animalDetails} options={{ headerShown: false }} />
+          <Stack.Screen name={routeNames.animalAttachments} options={{ headerShown: false }} />
+          <Stack.Screen name={routeNames.animalMedicines} options={{ headerShown: false }} />
+          <Stack.Screen name={routeNames.animalForm} options={{ headerShown: false }} />
+          <Stack.Screen name={routeNames.editAnimal} options={{ headerShown: false }} />
+          <Stack.Screen name={routeNames.medicines} options={{ headerShown: false }} />
         </Stack>
       </AuthProvider>
     </AppThemeProvider>

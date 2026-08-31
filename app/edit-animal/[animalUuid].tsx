@@ -2,14 +2,15 @@ import { Redirect, useLocalSearchParams } from 'expo-router';
 
 import { AnimalFormScreen } from '../../src/components/animal-form-screen';
 import { useAuth } from '../../src/contexts/auth-context';
+import { routes } from '../../src/routes';
 
 export default function EditAnimalScreen() {
   const { animalUuid } = useLocalSearchParams<{ animalUuid: string }>();
   const { status } = useAuth();
 
   if (status === 'loading') return null;
-  if (status === 'unauthenticated') return <Redirect href='/login' />;
-  if (!animalUuid) return <Redirect href='/animals' />;
+  if (status === 'unauthenticated') return <Redirect href={routes.login} />;
+  if (!animalUuid) return <Redirect href={routes.animals} />;
 
   return <AnimalFormScreen animalUuid={animalUuid} />;
 }

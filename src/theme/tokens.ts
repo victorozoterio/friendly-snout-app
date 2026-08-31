@@ -1,21 +1,22 @@
 import { createTokens } from 'tamagui';
+import { palette } from './colors';
 
 export const colors = {
-  primary: '#1371AF',
-  primaryPressed: '#0B4F80',
-  secondary: '#0B4F80',
-  background: '#E6EEF6',
-  surface: '#FFFFFF',
-  surfaceMuted: '#F4F8FC',
-  text: '#082038',
-  textMuted: '#5D7186',
-  border: '#C9D7E6',
-  placeholder: '#8FA6BF',
-  error: '#E74C3C',
-  warning: '#F4B400',
-  success: '#2ECC71',
-  white: '#FFFFFF',
-  black: '#082038',
+  primary: palette.blue700,
+  primaryPressed: palette.blue800,
+  secondary: palette.blue800,
+  background: palette.neutral100,
+  surface: palette.neutral0,
+  surfaceMuted: palette.neutral50,
+  text: palette.blue950,
+  textMuted: palette.neutral600,
+  border: palette.blue200,
+  placeholder: palette.neutral500,
+  error: palette.red500,
+  warning: palette.yellow500,
+  success: palette.green500,
+  white: palette.neutral0,
+  black: palette.blue950,
 } as const;
 
 export const spacing = {

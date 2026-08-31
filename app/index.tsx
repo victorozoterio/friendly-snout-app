@@ -1,16 +1,25 @@
 import { Redirect, useFocusEffect, useRouter } from 'expo-router';
-import { ArrowClockwise, CaretRight, Heart, House, PawPrint, Pill, WarningCircle } from 'phosphor-react-native';
+import {
+  ArrowClockwiseIcon,
+  CaretRightIcon,
+  HeartIcon,
+  HouseIcon,
+  PawPrintIcon,
+  PillIcon,
+  WarningCircleIcon,
+} from 'phosphor-react-native';
 import { useCallback, useRef, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView } from 'react-native';
 import { Card, Text, XStack, YStack } from 'tamagui';
 
 import { MainLayout, useAppColors } from '../src/components/main-layout';
 import { useAuth } from '../src/contexts/auth-context';
+import { routes } from '../src/routes';
 import { type AnimalStageTotals, getAnimalStageTotals } from '../src/services/animals';
 
 type MetricCardProps = {
   accent: string;
-  Icon: typeof House;
+  Icon: typeof HouseIcon;
   label: string;
   value: number;
 };
@@ -97,7 +106,7 @@ function MetricsError({ onRetry }: { onRetry: () => void }) {
 
   return (
     <YStack flex={1} gap='$3' items='center' justify='center' px='$6' style={{ minHeight: 260 }}>
-      <WarningCircle color={colors.warning} size={40} weight='fill' />
+      <WarningCircleIcon color={colors.warning} size={40} weight='fill' />
       <Text fontSize={17} fontWeight='700' style={{ color: colors.text, textAlign: 'center' }}>
         Não foi possível carregar os indicadores.
       </Text>
@@ -115,7 +124,7 @@ function MetricsError({ onRetry }: { onRetry: () => void }) {
         })}
       >
         <XStack gap='$2' items='center'>
-          <ArrowClockwise color={colors.text} size={18} />
+          <ArrowClockwiseIcon color={colors.text} size={18} />
           <Text fontWeight='700' style={{ color: colors.text }}>
             Tentar novamente
           </Text>
@@ -127,7 +136,7 @@ function MetricsError({ onRetry }: { onRetry: () => void }) {
 
 type QuickActionProps = {
   description: string;
-  Icon: typeof PawPrint;
+  Icon: typeof PawPrintIcon;
   onPress: () => void;
   title: string;
 };
@@ -163,7 +172,7 @@ function QuickAction({ description, Icon, onPress, title }: QuickActionProps) {
           >
             <Icon color={colors.primary} size={25} weight='fill' />
           </XStack>
-          <CaretRight color={colors.muted} size={22} weight='bold' />
+          <CaretRightIcon color={colors.muted} size={22} weight='bold' />
         </XStack>
         <YStack gap='$1'>
           <Text fontSize={16} fontWeight='800' style={{ color: colors.text }}>
@@ -230,15 +239,15 @@ function Dashboard() {
           <YStack gap='$6'>
             <YStack gap='$3'>
               <XStack gap='$2' items='center'>
-                <PawPrint color={colors.primary} size={25} weight='fill' />
+                <PawPrintIcon color={colors.primary} size={25} weight='fill' />
                 <Text fontSize={20} fontWeight='800' style={{ color: colors.text }}>
                   Situação dos animais
                 </Text>
               </XStack>
               <XStack gap='$2'>
-                <MetricCard accent={colors.warning} Icon={House} label='Quarentena' value={metrics.quarantine} />
-                <MetricCard accent={colors.primary} Icon={PawPrint} label='Acolhidos' value={metrics.sheltered} />
-                <MetricCard accent={colors.success} Icon={Heart} label='Adotados' value={metrics.adopted} />
+                <MetricCard accent={colors.warning} Icon={HouseIcon} label='Quarentena' value={metrics.quarantine} />
+                <MetricCard accent={colors.primary} Icon={PawPrintIcon} label='Acolhidos' value={metrics.sheltered} />
+                <MetricCard accent={colors.success} Icon={HeartIcon} label='Adotados' value={metrics.adopted} />
               </XStack>
             </YStack>
 
@@ -251,14 +260,14 @@ function Dashboard() {
               <XStack gap='$3'>
                 <QuickAction
                   description='Ver e gerenciar todos os animais'
-                  Icon={PawPrint}
-                  onPress={() => router.replace('/animals' as never)}
+                  Icon={PawPrintIcon}
+                  onPress={() => router.replace(routes.animals)}
                   title='Animais'
                 />
                 <QuickAction
                   description='Gerenciar estoque e aplicações'
-                  Icon={Pill}
-                  onPress={() => router.replace('/medicines' as never)}
+                  Icon={PillIcon}
+                  onPress={() => router.replace(routes.medicines)}
                   title='Medicamentos'
                 />
               </XStack>
@@ -280,7 +289,7 @@ export default function Index() {
   const { status } = useAuth();
 
   if (status === 'loading') return null;
-  if (status === 'unauthenticated') return <Redirect href='/login' />;
+  if (status === 'unauthenticated') return <Redirect href={routes.login} />;
 
   return <Dashboard />;
 }

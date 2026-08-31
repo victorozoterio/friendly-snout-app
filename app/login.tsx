@@ -6,6 +6,7 @@ import { Button, Input, Label, Text, YStack } from 'tamagui';
 
 import { FormErrorInline } from '../src/components/form-error-inline';
 import { useAuth } from '../src/contexts/auth-context';
+import { routes } from '../src/routes';
 import {
   emptySignInFieldErrors,
   getSignInErrorMessage,
@@ -25,7 +26,7 @@ export default function Login() {
   const [apiError, setApiError] = useState<string | null>(null);
 
   if (status === 'loading') return null;
-  if (status === 'authenticated') return <Redirect href={'/' as never} />;
+  if (status === 'authenticated') return <Redirect href={routes.home} />;
 
   const handleSignIn = async () => {
     const result = signInSchema.safeParse({ email, password });
@@ -46,7 +47,7 @@ export default function Login() {
 
     try {
       await signIn(result.data.email, result.data.password);
-      router.replace('/' as never);
+      router.replace(routes.home);
     } catch (error: unknown) {
       setApiError(getSignInErrorMessage(error));
     } finally {

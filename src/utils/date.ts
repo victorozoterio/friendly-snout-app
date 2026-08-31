@@ -4,6 +4,9 @@
  * retorne valores nulos, vazios ou malformatados.
  */
 
+/**
+ * Capitaliza um texto não vazio e fornece um rótulo seguro para dados ausentes.
+ */
 export function safeCapitalize(value: string | null | undefined): string {
   if (!value || typeof value !== 'string') return 'Não informado';
   const trimmed = value.trim();
@@ -11,6 +14,9 @@ export function safeCapitalize(value: string | null | undefined): string {
   return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
 }
 
+/**
+ * Formata uma data ISO em DD/MM/AAAA sem permitir que valores inválidos quebrem a tela.
+ */
 export function safeFormatDate(value: string | null | undefined): string {
   if (!value) return 'Não informado';
 
@@ -26,6 +32,9 @@ export function safeFormatDate(value: string | null | undefined): string {
   }
 }
 
+/**
+ * Formata somente a parcela de data de um nascimento retornado pela API.
+ */
 export function safeFormatBirthDate(value: string | null | undefined): string {
   if (!value || typeof value !== 'string') return 'Não informado';
 
@@ -36,6 +45,9 @@ export function safeFormatBirthDate(value: string | null | undefined): string {
   return `${day}/${month}/${year}`;
 }
 
+/**
+ * Calcula a idade legível a partir da data de nascimento, em anos e meses completos.
+ */
 export function safeFormatAge(birthDate: string | null | undefined): string {
   if (!birthDate || typeof birthDate !== 'string') return '';
 
@@ -63,4 +75,34 @@ export function safeFormatAge(birthDate: string | null | undefined): string {
 
   if (yearsLabel && monthsLabel) return `${yearsLabel} e ${monthsLabel}`;
   return yearsLabel || monthsLabel;
+}
+
+/**
+ * Verifica se um valor DD/MM/AAAA representa uma data existente no calendário.
+ */
+export function isValidBrazilianDate(value: string): boolean {
+  const dateMatch = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!dateMatch) return false;
+
+  const [, dayValue, monthValue, yearValue] = dateMatch;
+  const day = Number(dayValue);
+  const month = Number(monthValue);
+  const year = Number(yearValue);
+  const date = new Date(year, month - 1, day);
+
+  return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+}
+
+/**
+ * Informa se uma data DD/MM/AAAA é posterior ao fim do dia de referência.
+ */
+export function isFutureBrazilianDate(value: string, referenceDate = new Date()): boolean {
+  if (!isValidBrazilianDate(value)) return false;
+
+  const [day, month, year] = value.split('/').map(Number);
+  const date = new Date(year, month - 1, day);
+  const endOfReferenceDay = new Date(referenceDate);
+  endOfReferenceDay.setHours(23, 59, 59, 999);
+
+  return date > endOfReferenceDay;
 }

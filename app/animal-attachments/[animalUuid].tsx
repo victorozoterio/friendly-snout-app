@@ -1,7 +1,7 @@
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { Redirect, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { Camera, File as FileIcon, Image as ImageIcon, Paperclip, Plus, Trash, X } from 'phosphor-react-native';
+import { Camera, File as FileIcon, Image as ImageIcon, Paperclip, PlusIcon, Trash, X } from 'phosphor-react-native';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Linking, Modal, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,67 +10,23 @@ import { Card, Text, XStack, YStack } from 'tamagui';
 import { useAppColors } from '../../src/components/main-layout';
 import { ScreenHeader } from '../../src/components/screen-header';
 import { useAuth } from '../../src/contexts/auth-context';
+import { routes } from '../../src/routes';
 import {
   type Attachment,
-  type AttachmentUpload,
   deleteAnimalAttachment,
   getAnimalAttachments,
   getAttachmentErrorMessage,
   uploadAnimalAttachment,
 } from '../../src/services/attachments';
-
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
-const supportedMimeTypes = ['image/jpeg', 'image/png', 'image/avif', 'image/webp', 'application/pdf'];
-
-type PickedFile = {
-  fileName?: string | null;
-  fileSize?: number | null;
-  mimeType?: string | null;
-  size?: number | null;
-  uri: string;
-};
-
-function isImageAttachment(attachment: Attachment) {
-  return ['jpeg', 'jpg', 'png', 'avif', 'webp'].includes(attachment.type.toLocaleLowerCase('pt-BR'));
-}
-
-function getAttachmentName(attachment: Attachment) {
-  return attachment.name?.trim() || 'Anexo';
-}
-
-function getMimeType(file: PickedFile) {
-  if (file.mimeType === 'image/jpg') return 'image/jpeg';
-  if (file.mimeType && supportedMimeTypes.includes(file.mimeType)) return file.mimeType;
-
-  const fileName = file.fileName?.toLocaleLowerCase('pt-BR') ?? '';
-  const extensionStart = fileName.lastIndexOf('.');
-  const extension = extensionStart >= 0 ? fileName.slice(extensionStart + 1) : '';
-
-  if (extension === 'jpg' || extension === 'jpeg') return 'image/jpeg';
-  if (extension === 'png') return 'image/png';
-  if (extension === 'avif') return 'image/avif';
-  if (extension === 'webp') return 'image/webp';
-  if (extension === 'pdf') return 'application/pdf';
-
-  return null;
-}
-
-function createUploadFile(file: PickedFile): AttachmentUpload | null {
-  const mimeType = getMimeType(file);
-  if (!mimeType) return null;
-
-  const originalName = file.fileName?.trim() || 'anexo';
-  const extensionStart = originalName.lastIndexOf('.');
-  const baseName = extensionStart > 0 ? originalName.slice(0, extensionStart) : originalName;
-  const extension =
-    mimeType === 'application/pdf' ? 'pdf' : mimeType.split('/')[1] === 'jpeg' ? 'jpg' : mimeType.split('/')[1];
-
-  return {
-    mimeType,
-    name: `${baseName || 'anexo'}-${Date.now()}.${extension}`,
-    uri: file.uri,
-  };
-}
+import { effectColors, palette } from '../../src/theme';
+import {
+  createAttachmentUpload,
+  getAttachmentName,
+  isImageAttachment,
+  maxAttachmentFileSize,
+  type PickedAttachmentFile,
+  supportedAttachmentMimeTypes,
+} from '../../src/utils/attachment';
 
 function AttachmentTile({ attachment, onPress }: { attachment: Attachment; onPress: () => void }) {
   const colors = useAppColors();
@@ -134,16 +90,16 @@ export default function AnimalAttachmentsScreen() {
     }, [loadAttachments]),
   );
 
-  const uploadFile = async (file: PickedFile) => {
+  const uploadFile = async (file: PickedAttachmentFile) => {
     if (!animalUuid) return;
 
     const size = file.fileSize ?? file.size;
-    if (size && size > MAX_FILE_SIZE) {
+    if (size && size > maxAttachmentFileSize) {
       Alert.alert('Arquivo muito grande', 'Escolha um arquivo de até 10 MB.');
       return;
     }
 
-    const upload = createUploadFile(file);
+    const upload = createAttachmentUpload(file);
     if (!upload) {
       Alert.alert('Formato não suportado', 'Escolha uma imagem JPG, PNG, AVIF, WEBP ou um arquivo PDF.');
       return;
@@ -189,7 +145,10 @@ export default function AnimalAttachmentsScreen() {
   };
 
   const pickFromFiles = async () => {
-    const result = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true, type: supportedMimeTypes });
+    const result = await DocumentPicker.getDocumentAsync({
+      copyToCacheDirectory: true,
+      type: [...supportedAttachmentMimeTypes],
+    });
     if (!result.canceled && result.assets[0]) await uploadFile(result.assets[0]);
   };
 
@@ -225,7 +184,7 @@ export default function AnimalAttachmentsScreen() {
   };
 
   if (status === 'loading') return null;
-  if (status === 'unauthenticated') return <Redirect href='/login' />;
+  if (status === 'unauthenticated') return <Redirect href={routes.login} />;
 
   return (
     <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ backgroundColor: colors.background, flex: 1 }}>
@@ -258,11 +217,11 @@ export default function AnimalAttachmentsScreen() {
               })}
             >
               {isUploading ? (
-                <ActivityIndicator color='#FFFFFF' size='small' />
+                <ActivityIndicator color={palette.neutral0} size='small' />
               ) : (
-                <Plus color='#FFFFFF' size={18} weight='bold' />
+                <PlusIcon color={palette.neutral0} size={18} weight='bold' />
               )}
-              <Text fontSize={14} fontWeight='700' style={{ color: '#FFFFFF' }}>
+              <Text fontSize={14} fontWeight='700' style={{ color: palette.neutral0 }}>
                 {isUploading ? 'Enviando' : 'Adicionar'}
               </Text>
             </Pressable>
@@ -309,7 +268,7 @@ export default function AnimalAttachmentsScreen() {
               </XStack>
               <YStack gap='$2' items='center'>
                 <Text fontSize={18} fontWeight='800' style={{ color: colors.text, textAlign: 'center' }}>
-                  Nenhum anexo adicionado ainda
+                  Nenhum documento anexado
                 </Text>
                 <Text fontSize={14} style={{ color: colors.muted, textAlign: 'center' }}>
                   Adicione fotos, comprovantes ou documentos em PDF.
@@ -328,8 +287,8 @@ export default function AnimalAttachmentsScreen() {
                 })}
               >
                 <XStack gap='$2' items='center'>
-                  <Plus color='#FFFFFF' size={20} weight='bold' />
-                  <Text fontWeight='700' style={{ color: '#FFFFFF' }}>
+                  <PlusIcon color={palette.neutral0} size={20} weight='bold' />
+                  <Text fontWeight='700' style={{ color: palette.neutral0 }}>
                     Adicionar Anexo
                   </Text>
                 </XStack>
@@ -355,7 +314,7 @@ export default function AnimalAttachmentsScreen() {
         transparent
         visible={isSourceModalOpen}
       >
-        <YStack flex={1} justify='flex-end' style={{ backgroundColor: 'rgba(2, 12, 22, 0.65)' }}>
+        <YStack flex={1} justify='flex-end' style={{ backgroundColor: effectColors.darkModalOverlay }}>
           <Card
             borderWidth={1}
             gap='$4'
@@ -491,14 +450,14 @@ export default function AnimalAttachmentsScreen() {
         transparent
         visible={Boolean(selectedAttachment)}
       >
-        <YStack flex={1} justify='center' p='$4' style={{ backgroundColor: 'rgba(0, 0, 0, 0.9)' }}>
+        <YStack flex={1} justify='center' p='$4' style={{ backgroundColor: effectColors.previewOverlay }}>
           <XStack justify='flex-end' mb='$2'>
             <Pressable
               accessibilityLabel='Fechar prévia do anexo'
               onPress={() => setSelectedAttachment(null)}
               style={{ padding: 8 }}
             >
-              <X color='#FFFFFF' size={28} />
+              <X color={palette.neutral0} size={28} />
             </Pressable>
           </XStack>
           {selectedAttachment ? (
@@ -511,11 +470,11 @@ export default function AnimalAttachmentsScreen() {
                 />
               ) : (
                 <YStack gap='$3' items='center' p='$6'>
-                  <FileIcon color='#FFFFFF' size={72} weight='fill' />
-                  <Text fontSize={18} fontWeight='800' style={{ color: '#FFFFFF', textAlign: 'center' }}>
+                  <FileIcon color={palette.neutral0} size={72} weight='fill' />
+                  <Text fontSize={18} fontWeight='800' style={{ color: palette.neutral0, textAlign: 'center' }}>
                     {getAttachmentName(selectedAttachment)}
                   </Text>
-                  <Text fontSize={14} style={{ color: '#D2DBE4' }}>
+                  <Text fontSize={14} style={{ color: palette.neutral300 }}>
                     {selectedAttachment.type.toLocaleUpperCase('pt-BR')}
                   </Text>
                 </YStack>
@@ -532,7 +491,7 @@ export default function AnimalAttachmentsScreen() {
                     paddingVertical: 14,
                   })}
                 >
-                  <Text fontWeight='800' style={{ color: '#FFFFFF' }}>
+                  <Text fontWeight='800' style={{ color: palette.neutral0 }}>
                     Abrir anexo
                   </Text>
                 </Pressable>

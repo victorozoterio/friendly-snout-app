@@ -1,5 +1,5 @@
 import { Redirect, useLocalSearchParams } from 'expo-router';
-import { Pill, Plus } from 'phosphor-react-native';
+import { PillIcon, PlusIcon } from 'phosphor-react-native';
 
 import { Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,6 +8,8 @@ import { Text, XStack, YStack } from 'tamagui';
 import { useAppColors } from '../../src/components/main-layout';
 import { ScreenHeader } from '../../src/components/screen-header';
 import { useAuth } from '../../src/contexts/auth-context';
+import { routes } from '../../src/routes';
+import { palette } from '../../src/theme';
 
 export default function AnimalMedicinesScreen() {
   const { animalUuid } = useLocalSearchParams<{ animalUuid: string }>();
@@ -15,7 +17,7 @@ export default function AnimalMedicinesScreen() {
   const colors = useAppColors();
 
   if (status === 'loading') return null;
-  if (status === 'unauthenticated') return <Redirect href='/login' />;
+  if (status === 'unauthenticated') return <Redirect href={routes.login} />;
 
   return (
     <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ backgroundColor: colors.background, flex: 1 }}>
@@ -30,7 +32,7 @@ export default function AnimalMedicinesScreen() {
             style={{ backgroundColor: `${colors.primary}1A` }}
             width={80}
           >
-            <Pill color={colors.primary} size={40} weight='fill' />
+            <PillIcon color={colors.primary} size={40} weight='fill' />
           </XStack>
           <YStack gap='$2' items='center'>
             <Text fontSize={20} fontWeight='800' style={{ color: colors.text, textAlign: 'center' }}>
@@ -52,8 +54,8 @@ export default function AnimalMedicinesScreen() {
             })}
           >
             <XStack gap='$2' items='center'>
-              <Plus color='#FFFFFF' size={20} weight='bold' />
-              <Text fontWeight='700' style={{ color: '#FFFFFF' }}>
+              <PlusIcon color={palette.neutral0} size={20} weight='bold' />
+              <Text fontWeight='700' style={{ color: palette.neutral0 }}>
                 Agendar Medicamento
               </Text>
             </XStack>

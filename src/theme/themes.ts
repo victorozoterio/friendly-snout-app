@@ -1,4 +1,5 @@
 import { defaultConfig } from '@tamagui/config/v5';
+import { palette } from './colors';
 import { colors, tokens } from './tokens';
 
 const sharedTheme = {
@@ -21,7 +22,7 @@ export const themes = {
     ...sharedTheme,
     background: colors.background,
     backgroundHover: colors.surfaceMuted,
-    backgroundPress: '#D8E5F1',
+    backgroundPress: palette.blue100,
     color: colors.text,
     colorHover: colors.secondary,
     colorPress: colors.secondary,
@@ -34,18 +35,18 @@ export const themes = {
   dark: {
     ...defaultConfig.themes.dark,
     ...sharedTheme,
-    background: '#081A2B',
-    backgroundHover: '#102B42',
-    backgroundPress: '#173A57',
-    color: '#F4F8FC',
-    colorHover: '#FFFFFF',
-    colorPress: '#FFFFFF',
-    colorFocus: '#74B7E2',
-    borderColor: '#2D4B63',
-    borderColorHover: '#74B7E2',
-    borderColorFocus: '#74B7E2',
-    placeholderColor: '#9CB3C7',
-    surface: '#102B42',
-    surfaceMuted: '#173A57',
+    background: palette.blueDark900,
+    backgroundHover: palette.blueDark700,
+    backgroundPress: palette.blueDark500,
+    color: palette.neutral50,
+    colorHover: palette.neutral0,
+    colorPress: palette.neutral0,
+    colorFocus: palette.blue400,
+    borderColor: palette.blueDark300,
+    borderColorHover: palette.blue400,
+    borderColorFocus: palette.blue400,
+    placeholderColor: palette.blue300,
+    surface: palette.blueDark700,
+    surfaceMuted: palette.blueDark500,
   },
 };
