@@ -268,34 +268,46 @@ function MedicinesList() {
             ) : null}
           </XStack>
 
-          <XStack items='center' justify='space-between'>
-            <Pressable
-              accessibilityLabel='Gerenciar marcas de medicamentos'
-              onPress={() => router.push(routes.medicineBrands)}
-              style={({ pressed }) => ({
-                backgroundColor: colors.card,
-                borderColor: colors.border,
-                borderRadius: 20,
-                borderWidth: 1,
-                opacity: pressed ? 0.72 : 1,
-                paddingHorizontal: 14,
-                paddingVertical: 8,
-              })}
+          <Pressable
+            accessibilityLabel='Gerenciar marcas de medicamentos'
+            onPress={() => router.push(routes.medicineBrands)}
+            style={({ pressed }) => ({ opacity: pressed ? 0.76 : 1 })}
+          >
+            <Card
+              borderWidth={1}
+              p='$3'
+              rounded='$4'
+              style={{ backgroundColor: `${colors.primary}14`, borderColor: `${colors.primary}55` }}
             >
-              <XStack gap='$2' items='center'>
-                <TagIcon color={colors.primary} size={17} weight='fill' />
-                <Text fontSize={13} fontWeight='700' style={{ color: colors.primary }}>
-                  Gerenciar marcas
-                </Text>
+              <XStack gap='$3' items='center'>
+                <XStack
+                  height={44}
+                  items='center'
+                  justify='center'
+                  rounded='$4'
+                  style={{ backgroundColor: `${colors.primary}22` }}
+                  width={44}
+                >
+                  <TagIcon color={colors.primary} size={22} weight='fill' />
+                </XStack>
+                <YStack flex={1} gap='$1'>
+                  <Text fontSize={15} fontWeight='800' style={{ color: colors.primary }}>
+                    Gerenciar marcas
+                  </Text>
+                  <Text fontSize={12} numberOfLines={1} style={{ color: colors.muted }}>
+                    Cadastre e edite as marcas dos medicamentos
+                  </Text>
+                </YStack>
+                <CaretRightIcon color={colors.primary} size={20} weight='bold' />
               </XStack>
-            </Pressable>
+            </Card>
+          </Pressable>
 
-            {!isLoading && !showErrorState && medicines.length > 0 ? (
-              <Text fontSize={13} style={{ color: colors.muted }}>
-                {totalCount} {totalCount === 1 ? 'medicamento' : 'medicamentos'}
-              </Text>
-            ) : null}
-          </XStack>
+          {!isLoading && !showErrorState && medicines.length > 0 ? (
+            <Text fontSize={13} style={{ color: colors.muted }}>
+              {totalCount} {totalCount === 1 ? 'medicamento' : 'medicamentos'}
+            </Text>
+          ) : null}
 
           {hasError && medicines.length > 0 ? (
             <Text fontSize={13} style={{ color: colors.muted }}>
