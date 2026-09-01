@@ -1,10 +1,8 @@
 import type { AnimalFormValues } from '../../services/animals';
 import { colors } from '../../theme';
+import type { FormOption } from '../form/fields';
 
-export type FormOption<T extends string> = {
-  label: string;
-  value: T;
-};
+export type { FormOption };
 
 export type FormStep = {
   fields: (keyof AnimalFormValues)[];
