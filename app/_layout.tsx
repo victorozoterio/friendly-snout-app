@@ -22,6 +22,9 @@ export default function RootLayout() {
           <Stack.Screen name={routeNames.animalForm} options={{ headerShown: false }} />
           <Stack.Screen name={routeNames.editAnimal} options={{ headerShown: false }} />
           <Stack.Screen name={routeNames.medicines} options={{ headerShown: false }} />
+          <Stack.Screen name={routeNames.medicineForm} options={{ headerShown: false }} />
+          <Stack.Screen name={routeNames.editMedicine} options={{ headerShown: false }} />
+          <Stack.Screen name={routeNames.medicineBrands} options={{ headerShown: false }} />
         </Stack>
       </AuthProvider>
     </AppThemeProvider>
