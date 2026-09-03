@@ -26,10 +26,12 @@ import { Card, Text, XStack, YStack } from 'tamagui';
 
 import { AnimalStageBadge } from '../../src/components/animal-stage-badge';
 import { useAppColors } from '../../src/components/main-layout';
+import { MedicineApplicationCalendar } from '../../src/components/medicine-application-calendar';
 import { useAuth } from '../../src/contexts/auth-context';
 import { animalRoutes, routes } from '../../src/routes';
 import { type Animal, deleteAnimal, getAnimal, getAnimalErrorMessage } from '../../src/services/animals';
 import { type Attachment, getAnimalAttachments } from '../../src/services/attachments';
+import { getMedicineApplicationsByAnimal, type MedicineApplication } from '../../src/services/medicine-applications';
 import { actionColors, effectColors, palette } from '../../src/theme';
 import { getAttachmentName, isImageAttachment } from '../../src/utils/attachment';
 import { safeCapitalize, safeFormatAge, safeFormatBirthDate, safeFormatDate } from '../../src/utils/date';
@@ -164,6 +166,9 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [recentAttachments, setRecentAttachments] = useState<Attachment[]>([]);
+  const [scheduledApplications, setScheduledApplications] = useState<MedicineApplication[]>([]);
+  const [isAgendaLoading, setIsAgendaLoading] = useState(true);
+  const [hasAgendaError, setHasAgendaError] = useState(false);
 
   const notInformed = 'Não informado';
   const isFeline = animal.species.name.trim().toLocaleLowerCase('pt-BR') === 'gato';
@@ -171,19 +176,36 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
   const catPlaceholder = require('../../assets/profiles-cat.png');
   const dogPlaceholder = require('../../assets/profiles-dog.png');
 
-  const loadRecentAttachments = useCallback(async () => {
-    try {
-      const response = await getAnimalAttachments(animal.uuid);
-      setRecentAttachments(response.data.slice(0, 3));
-    } catch {
+  const loadPreviewData = useCallback(async () => {
+    setIsAgendaLoading(true);
+    setHasAgendaError(false);
+
+    const [attachmentsResult, applicationsResult] = await Promise.allSettled([
+      getAnimalAttachments(animal.uuid),
+      getMedicineApplicationsByAnimal(animal.uuid),
+    ]);
+
+    if (attachmentsResult.status === 'fulfilled') {
+      setRecentAttachments(attachmentsResult.value.data.slice(0, 3));
+    } else {
       setRecentAttachments([]);
     }
+
+    if (applicationsResult.status === 'fulfilled') {
+      setScheduledApplications(
+        applicationsResult.value.data.filter((application) => Boolean(application.nextApplicationAt)),
+      );
+    } else {
+      setHasAgendaError(true);
+    }
+
+    setIsAgendaLoading(false);
   }, [animal.uuid]);
 
   useFocusEffect(
     useCallback(() => {
-      void loadRecentAttachments();
-    }, [loadRecentAttachments]),
+      void loadPreviewData();
+    }, [loadPreviewData]),
   );
 
   const closeDeleteDialog = () => {
@@ -476,7 +498,7 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
             </XStack>
             <Pressable
               accessibilityLabel='Ver histórico de medicamentos'
-              onPress={() => router.push(routes.medicines)}
+              onPress={() => router.push(animalRoutes.medicines(animal.uuid))}
               style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
             >
               <XStack gap='$1' items='center'>
@@ -488,23 +510,11 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
             </Pressable>
           </XStack>
 
-          {/* Placeholder of Medicine Applications */}
-          <Card
-            borderWidth={1}
-            p='$4'
-            rounded='$4'
-            style={{ backgroundColor: colors.card, borderColor: colors.border }}
-          >
-            <YStack gap='$2' items='center' py='$3'>
-              <CalendarIcon color={colors.muted} size={32} />
-              <Text fontSize={15} fontWeight='700' style={{ color: colors.text, textAlign: 'center' }}>
-                Nenhuma aplicação registrada na agenda
-              </Text>
-              <Text fontSize={13} style={{ color: colors.muted, textAlign: 'center' }}>
-                Acompanhe e consulte o histórico de medicamentos aplicados ou agendados.
-              </Text>
-            </YStack>
-          </Card>
+          <MedicineApplicationCalendar
+            applications={scheduledApplications}
+            hasError={hasAgendaError}
+            isLoading={isAgendaLoading}
+          />
         </YStack>
 
         {/* Action Buttons Section */}
@@ -512,7 +522,7 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
           {/* Agendar Medicamento */}
           <Pressable
             accessibilityLabel='Agendar Medicamento'
-            onPress={() => router.push(routes.medicines)}
+            onPress={() => router.push(animalRoutes.createMedicineApplication(animal.uuid) as never)}
             style={({ pressed }) => ({
               alignItems: 'center',
               backgroundColor: actionColors.medicine,

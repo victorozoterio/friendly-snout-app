@@ -12,6 +12,7 @@ export const routes = {
 /** Cria as rotas que dependem do identificador de um animal. */
 export const animalRoutes = {
   attachments: (animalUuid: string) => `/animal-attachments/${animalUuid}` as const,
+  createMedicineApplication: (animalUuid: string) => `/create-medicine-application/${animalUuid}` as const,
   details: (animalUuid: string) => `/animal-details/${animalUuid}` as const,
   edit: (animalUuid: string) => `/edit-animal/${animalUuid}` as const,
   medicines: (animalUuid: string) => `/animal-medicines/${animalUuid}` as const,
@@ -29,6 +30,7 @@ export const routeNames = {
   animalForm: 'animal-form',
   animalMedicines: 'animal-medicines/[animalUuid]',
   animals: 'animals',
+  createMedicineApplication: 'create-medicine-application/[animalUuid]',
   editAnimal: 'edit-animal/[animalUuid]',
   editMedicine: 'edit-medicine/[medicineUuid]',
   home: 'index',
