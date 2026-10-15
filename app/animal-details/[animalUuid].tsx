@@ -4,6 +4,7 @@ import {
   ArrowLeftIcon,
   CalendarIcon,
   CaretRightIcon,
+  File as FileIcon,
   PaperclipIcon,
   PencilSimpleIcon,
   PlusIcon,
@@ -414,7 +415,7 @@ function AnimalDetailsContent({
                         />
                       ) : (
                         <YStack flex={1} gap='$1' items='center' justify='center' p='$2'>
-                          <PaperclipIcon color={colors.primary} size={22} weight='fill' />
+                          <FileIcon color={colors.primary} size={22} weight='fill' />
                           <Text fontSize={10} numberOfLines={2} style={{ color: colors.text, textAlign: 'center' }}>
                             {getAttachmentName(attachment)}
                           </Text>
