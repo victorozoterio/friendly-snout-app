@@ -2,6 +2,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { Redirect, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import {
+  ArrowSquareOutIcon,
   Camera,
   DownloadSimpleIcon,
   File as FileIcon,
@@ -537,6 +538,7 @@ export default function AnimalAttachmentsScreen() {
               )}
               <YStack gap='$3' width='100%'>
                 <Pressable
+                  accessibilityLabel='Abrir anexo'
                   onPress={() => void openAttachment(selectedAttachment)}
                   style={({ pressed }) => ({
                     alignItems: 'center',
@@ -547,9 +549,12 @@ export default function AnimalAttachmentsScreen() {
                     paddingVertical: 14,
                   })}
                 >
-                  <Text fontWeight='800' style={{ color: palette.neutral0 }}>
-                    Abrir anexo
-                  </Text>
+                  <XStack gap='$2' items='center'>
+                    <ArrowSquareOutIcon color={palette.neutral0} size={20} weight='bold' />
+                    <Text fontWeight='800' style={{ color: palette.neutral0 }}>
+                      Abrir anexo
+                    </Text>
+                  </XStack>
                 </Pressable>
                 <Pressable
                   accessibilityLabel='Baixar anexo'
