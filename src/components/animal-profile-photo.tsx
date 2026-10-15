@@ -19,6 +19,13 @@ type AnimalProfilePhotoProps = {
 
 type PhotoSource = 'camera' | 'gallery';
 
+const profilePhotoPickerOptions = {
+  allowsEditing: true,
+  aspect: [1, 1] as [number, number],
+  mediaTypes: ['images'] as ImagePicker.MediaType[],
+  quality: 0.8,
+};
+
 /** Exibe e permite escolher a foto principal do animal, sem interferir nos anexos. */
 export function AnimalProfilePhoto({
   isLoading = false,
@@ -54,7 +61,7 @@ export function AnimalProfilePhoto({
       return;
     }
 
-    const result = await ImagePicker.launchCameraAsync({ allowsEditing: true, mediaTypes: ['images'], quality: 0.8 });
+    const result = await ImagePicker.launchCameraAsync(profilePhotoPickerOptions);
     if (!result.canceled && result.assets[0]) await processSelectedPhoto(result.assets[0]);
   };
 
@@ -65,11 +72,7 @@ export function AnimalProfilePhoto({
       return;
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      allowsEditing: true,
-      mediaTypes: ['images'],
-      quality: 0.8,
-    });
+    const result = await ImagePicker.launchImageLibraryAsync(profilePhotoPickerOptions);
     if (!result.canceled && result.assets[0]) await processSelectedPhoto(result.assets[0]);
   };
 
