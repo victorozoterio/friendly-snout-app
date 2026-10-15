@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "scheme": "friendlysnoutapp",
-    "plugins": ["expo-router", "@react-native-community/datetimepicker"],
+    "plugins": ["expo-router", "@react-native-community/datetimepicker", "expo-media-library"],
     "experiments": {
       "typedRoutes": true
     }

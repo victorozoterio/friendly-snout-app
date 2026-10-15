@@ -1,7 +1,16 @@
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { Redirect, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { Camera, File as FileIcon, Image as ImageIcon, Paperclip, PlusIcon, Trash, X } from 'phosphor-react-native';
+import {
+  Camera,
+  DownloadSimpleIcon,
+  File as FileIcon,
+  Image as ImageIcon,
+  Paperclip,
+  PlusIcon,
+  Trash,
+  X,
+} from 'phosphor-react-native';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Image, Linking, Modal, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -28,6 +37,7 @@ import {
   type PickedAttachmentFile,
   supportedAttachmentMimeTypes,
 } from '../../src/utils/attachment';
+import { downloadAttachmentToDevice } from '../../src/utils/attachment-download';
 
 function AttachmentTile({ attachment, onPress }: { attachment: Attachment; onPress: () => void }) {
   const colors = useAppColors();
@@ -63,13 +73,14 @@ export default function AnimalAttachmentsScreen() {
   const { animalUuid } = useLocalSearchParams<{ animalUuid: string }>();
   const { status } = useAuth();
   const colors = useAppColors();
-  const { confirm, showError, showWarning } = useAppDialog();
+  const { confirm, showError, showSuccess, showWarning } = useAppDialog();
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [isSourceModalOpen, setIsSourceModalOpen] = useState(false);
   const [selectedAttachment, setSelectedAttachment] = useState<Attachment | null>(null);
   const [deletingAttachmentUuid, setDeletingAttachmentUuid] = useState<string | null>(null);
+  const [downloadingAttachmentUuid, setDownloadingAttachmentUuid] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const loadAttachments = useCallback(async () => {
@@ -197,6 +208,34 @@ export default function AnimalAttachmentsScreen() {
       await Linking.openURL(attachment.url);
     } catch {
       showError({ description: 'Tente novamente mais tarde.', title: 'Não foi possível abrir o anexo' });
+    }
+  };
+
+  const downloadAttachment = async (attachment: Attachment) => {
+    setDownloadingAttachmentUuid(attachment.uuid);
+
+    try {
+      const result = await downloadAttachmentToDevice(attachment);
+      if (result === 'permission-denied') {
+        showWarning({
+          description: 'Permita o acesso à galeria para salvar a imagem.',
+          title: 'Permissão necessária',
+        });
+        return;
+      }
+      if (result === 'cancelled') return;
+
+      showSuccess({
+        description:
+          result === 'shared'
+            ? 'Use a opção “Salvar em Arquivos” para escolher o destino do documento.'
+            : 'O anexo foi salvo no seu dispositivo.',
+        title: result === 'shared' ? 'Escolha onde salvar' : 'Download concluído',
+      });
+    } catch {
+      showError({ description: 'Tente novamente mais tarde.', title: 'Não foi possível baixar o anexo' });
+    } finally {
+      setDownloadingAttachmentUuid(null);
     }
   };
 
@@ -511,6 +550,32 @@ export default function AnimalAttachmentsScreen() {
                   <Text fontWeight='800' style={{ color: palette.neutral0 }}>
                     Abrir anexo
                   </Text>
+                </Pressable>
+                <Pressable
+                  accessibilityLabel='Baixar anexo'
+                  disabled={downloadingAttachmentUuid === selectedAttachment.uuid}
+                  onPress={() => void downloadAttachment(selectedAttachment)}
+                  style={({ pressed }) => ({
+                    alignItems: 'center',
+                    backgroundColor: colors.cardMuted,
+                    borderColor: colors.border,
+                    borderRadius: 14,
+                    borderWidth: 1,
+                    opacity: downloadingAttachmentUuid === selectedAttachment.uuid ? 0.55 : pressed ? 0.78 : 1,
+                    paddingHorizontal: 16,
+                    paddingVertical: 14,
+                  })}
+                >
+                  <XStack gap='$2' items='center'>
+                    {downloadingAttachmentUuid === selectedAttachment.uuid ? (
+                      <ActivityIndicator color={colors.primary} size='small' />
+                    ) : (
+                      <DownloadSimpleIcon color={colors.primary} size={20} weight='bold' />
+                    )}
+                    <Text fontWeight='800' style={{ color: colors.primary }}>
+                      Baixar anexo
+                    </Text>
+                  </XStack>
                 </Pressable>
                 <Pressable
                   disabled={deletingAttachmentUuid === selectedAttachment.uuid}
