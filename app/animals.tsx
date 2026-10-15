@@ -1,18 +1,18 @@
 import { Redirect, useFocusEffect, useRouter } from 'expo-router';
-import {
-  ArrowClockwiseIcon,
-  CaretRightIcon,
-  MagnifyingGlassIcon,
-  PawPrintIcon,
-  PlusIcon,
-  WarningCircleIcon,
-  XCircleIcon,
-} from 'phosphor-react-native';
+import { ArrowClockwiseIcon, PawPrintIcon, WarningCircleIcon } from 'phosphor-react-native';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Image, Pressable, RefreshControl, ScrollView, TextInput } from 'react-native';
+import { ActivityIndicator, FlatList, Image, Pressable, RefreshControl, ScrollView } from 'react-native';
 import { Card, Text, XStack, YStack } from 'tamagui';
 
 import { AnimalStageBadge, useAnimalStageColors } from '../src/components/animal-stage-badge';
+import {
+  ListFloatingAction,
+  ListItemCard,
+  ListItemChevron,
+  ListScreenControls,
+  ListSearchField,
+  listContentContainerStyle,
+} from '../src/components/list-screen-elements';
 import { MainLayout, useAppColors } from '../src/components/main-layout';
 import { useAuth } from '../src/contexts/auth-context';
 import { animalRoutes, routes } from '../src/routes';
@@ -33,51 +33,45 @@ function AnimalCard({ animal, onPress }: { animal: Animal; onPress: () => void }
   const colors = useAppColors();
 
   return (
-    <Pressable
-      accessibilityLabel={`Ver detalhes de ${animal.name}`}
-      onPress={onPress}
-      style={({ pressed }) => ({ opacity: pressed ? 0.76 : 1 })}
-    >
-      <Card borderWidth={1} p='$3' rounded='$4' style={{ backgroundColor: colors.card, borderColor: colors.border }}>
-        <XStack gap='$3' items='center'>
-          {animal.photoUrl ? (
-            <Image
-              accessibilityLabel={`Foto de ${animal.name}`}
-              source={{ uri: animal.photoUrl }}
-              style={{ borderRadius: 14, height: 60, width: 60 }}
-            />
-          ) : (
-            <XStack
-              height={60}
-              items='center'
-              justify='center'
-              rounded='$4'
-              style={{ backgroundColor: colors.cardMuted }}
-              width={60}
-            >
-              <PawPrintIcon color={colors.primary} size={28} weight='fill' />
-            </XStack>
-          )}
-          <YStack flex={1} gap='$1'>
-            <XStack gap='$2' items='center' justify='space-between'>
-              <Text flex={1} fontSize={17} fontWeight='800' numberOfLines={1} style={{ color: colors.text }}>
-                {animal.name}
-              </Text>
-              <CaretRightIcon color={colors.muted} size={18} weight='bold' />
-            </XStack>
-            <Text fontSize={13} numberOfLines={1} style={{ color: colors.muted }}>
-              {animal.species.name} • {animal.breed.name}
+    <ListItemCard accessibilityLabel={`Ver detalhes de ${animal.name}`} onPress={onPress}>
+      <XStack gap='$3' items='center'>
+        {animal.photoUrl ? (
+          <Image
+            accessibilityLabel={`Foto de ${animal.name}`}
+            source={{ uri: animal.photoUrl }}
+            style={{ borderRadius: 14, height: 60, width: 60 }}
+          />
+        ) : (
+          <XStack
+            height={60}
+            items='center'
+            justify='center'
+            rounded='$4'
+            style={{ backgroundColor: colors.cardMuted }}
+            width={60}
+          >
+            <PawPrintIcon color={colors.primary} size={28} weight='fill' />
+          </XStack>
+        )}
+        <YStack flex={1} gap='$1'>
+          <XStack gap='$2' items='center' justify='space-between'>
+            <Text flex={1} fontSize={17} fontWeight='800' numberOfLines={1} style={{ color: colors.text }}>
+              {animal.name}
             </Text>
-            <XStack gap='$2' items='center' mt='$1'>
-              <AnimalStageBadge stage={animal.status} />
-              <Text fontSize={12} numberOfLines={1} style={{ color: colors.muted }}>
-                {animal.sex} · porte {animal.size}
-              </Text>
-            </XStack>
-          </YStack>
-        </XStack>
-      </Card>
-    </Pressable>
+            <ListItemChevron />
+          </XStack>
+          <Text fontSize={13} numberOfLines={1} style={{ color: colors.muted }}>
+            {animal.species.name} • {animal.breed.name}
+          </Text>
+          <XStack gap='$2' items='center' mt='$1'>
+            <AnimalStageBadge stage={animal.status} />
+            <Text fontSize={12} numberOfLines={1} style={{ color: colors.muted }}>
+              {animal.sex} · porte {animal.size}
+            </Text>
+          </XStack>
+        </YStack>
+      </XStack>
+    </ListItemCard>
   );
 }
 
@@ -248,29 +242,14 @@ function AnimalsList() {
   return (
     <MainLayout description='Gerencie os animais cadastrados' title='Animais'>
       <YStack flex={1}>
-        <YStack gap='$3' pb='$3' px='$5'>
-          <XStack
-            gap='$2'
-            items='center'
-            px='$3'
-            rounded='$4'
-            style={{ backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }}
-          >
-            <MagnifyingGlassIcon color={colors.muted} size={20} />
-            <TextInput
-              accessibilityLabel='Buscar animal pelo nome'
-              onChangeText={handleSearchChange}
-              placeholder='Buscar pelo nome...'
-              placeholderTextColor={colors.muted}
-              style={{ color: colors.text, flex: 1, fontSize: 15, paddingVertical: 12 }}
-              value={searchTerm}
-            />
-            {searchTerm.length > 0 ? (
-              <Pressable accessibilityLabel='Limpar busca' onPress={clearSearch}>
-                <XCircleIcon color={colors.muted} size={20} weight='fill' />
-              </Pressable>
-            ) : null}
-          </XStack>
+        <ListScreenControls>
+          <ListSearchField
+            accessibilityLabel='Buscar animal pelo nome'
+            onChangeText={handleSearchChange}
+            onClear={clearSearch}
+            placeholder='Buscar pelo nome...'
+            value={searchTerm}
+          />
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <XStack gap='$2'>
@@ -318,7 +297,7 @@ function AnimalsList() {
               Não foi possível atualizar agora. Os últimos dados carregados continuam visíveis.
             </Text>
           ) : null}
-        </YStack>
+        </ListScreenControls>
 
         {isLoading ? (
           <YStack flex={1} px='$5'>
@@ -328,7 +307,7 @@ function AnimalsList() {
           <AnimalsError onRetry={() => void loadAnimals(activeSearch)} />
         ) : (
           <FlatList
-            contentContainerStyle={{ flexGrow: 1, gap: 12, paddingBottom: 96, paddingHorizontal: 20 }}
+            contentContainerStyle={listContentContainerStyle}
             data={visibleAnimals}
             keyboardShouldPersistTaps='handled'
             keyExtractor={(animal) => animal.uuid}
@@ -356,32 +335,11 @@ function AnimalsList() {
           />
         )}
 
-        <Pressable
+        <ListFloatingAction
           accessibilityLabel='Cadastrar novo animal'
           onPress={() => router.push(routes.animalForm)}
-          style={({ pressed }) => ({
-            backgroundColor: colors.primary,
-            borderRadius: 28,
-            bottom: 20,
-            elevation: 6,
-            opacity: pressed ? 0.85 : 1,
-            paddingHorizontal: 18,
-            paddingVertical: 14,
-            position: 'absolute',
-            right: 20,
-            shadowColor: palette.black,
-            shadowOffset: { height: 3, width: 0 },
-            shadowOpacity: 0.25,
-            shadowRadius: 8,
-          })}
-        >
-          <XStack gap='$2' items='center'>
-            <PlusIcon color={palette.neutral0} size={20} weight='bold' />
-            <Text fontSize={15} fontWeight='700' style={{ color: palette.neutral0 }}>
-              Novo animal
-            </Text>
-          </XStack>
-        </Pressable>
+          label='Novo animal'
+        />
       </YStack>
     </MainLayout>
   );

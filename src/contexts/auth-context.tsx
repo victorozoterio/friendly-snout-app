@@ -25,7 +25,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       setStatus(accessToken && refreshToken ? 'authenticated' : 'unauthenticated');
     };
 
-    restoreSession().catch(async () => {
+    void restoreSession().catch(async () => {
       await tokenStorage.clearTokens();
       setStatus('unauthenticated');
     });

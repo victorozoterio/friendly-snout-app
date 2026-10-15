@@ -1,10 +1,10 @@
 import { useRouter } from 'expo-router';
 import { WarningCircleIcon } from 'phosphor-react-native';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card, Text, XStack, YStack } from 'tamagui';
-
+import { useAppDialog } from '../contexts/app-dialog-context';
 import { routes } from '../routes';
 import {
   createMedicine,
@@ -58,6 +58,7 @@ export function MedicineFormScreen({ medicineUuid }: MedicineFormScreenProps) {
   const isEdit = Boolean(medicineUuid);
   const router = useRouter();
   const colors = useAppColors();
+  const { showSuccess } = useAppDialog();
   const [values, setValues] = useState<MedicineFormValues>(emptyMedicineFormValues);
   const [brands, setBrands] = useState<MedicineBrand[]>([]);
   const [fieldErrors, setFieldErrors] = useState<MedicineFormFieldErrors>({});
@@ -135,13 +136,13 @@ export function MedicineFormScreen({ medicineUuid }: MedicineFormScreenProps) {
     try {
       if (medicineUuid) {
         await updateMedicine(medicineUuid, input);
-        Alert.alert('Medicamento atualizado', 'As alterações foram salvas com sucesso.');
+        showSuccess({ description: 'As alterações foram salvas com sucesso.', title: 'Medicamento atualizado' });
         router.back();
         return;
       }
 
       await createMedicine(input);
-      Alert.alert('Medicamento cadastrado', 'O novo medicamento foi cadastrado com sucesso.');
+      showSuccess({ description: 'O novo medicamento foi cadastrado com sucesso.', title: 'Medicamento cadastrado' });
       router.replace(routes.medicines);
     } catch (error: unknown) {
       const fallback = isEdit

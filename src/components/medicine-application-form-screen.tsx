@@ -1,10 +1,10 @@
 import { useRouter } from 'expo-router';
 import { CheckCircleIcon, WarningCircleIcon } from 'phosphor-react-native';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card, Text, XStack, YStack } from 'tamagui';
-
+import { useAppDialog } from '../contexts/app-dialog-context';
 import { animalRoutes } from '../routes';
 import { getAnimal } from '../services/animals';
 import {
@@ -75,6 +75,7 @@ function formatPickerTime(date: Date) {
 export function MedicineApplicationFormScreen({ animalUuid }: MedicineApplicationFormScreenProps) {
   const router = useRouter();
   const colors = useAppColors();
+  const { showSuccess } = useAppDialog();
   const [values, setValues] = useState(() => createMedicineApplicationFormValues());
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [animalName, setAnimalName] = useState('animal');
@@ -194,12 +195,13 @@ export function MedicineApplicationFormScreen({ animalUuid }: MedicineApplicatio
           : {}),
       });
 
-      Alert.alert(
-        data.kind === 'scheduled' ? 'Aplicação agendada' : 'Aplicação registrada',
-        data.kind === 'scheduled'
-          ? 'A aplicação futura foi cadastrada com sucesso.'
-          : 'A aplicação realizada foi adicionada ao histórico.',
-      );
+      showSuccess({
+        description:
+          data.kind === 'scheduled'
+            ? 'A aplicação futura foi cadastrada com sucesso.'
+            : 'A aplicação realizada foi adicionada ao histórico.',
+        title: data.kind === 'scheduled' ? 'Aplicação agendada' : 'Aplicação registrada',
+      });
       router.dismissTo(animalRoutes.medicines(animalUuid) as never);
     } catch (error: unknown) {
       setApiError(

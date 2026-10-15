@@ -40,7 +40,7 @@ export function MainLayout({ children, description, title }: MainLayoutProps) {
   const glassBackground = isDarkTheme ? effectColors.surfaceGlassDark : effectColors.surfaceGlassLight;
   const glassBorder = isDarkTheme ? effectColors.surfaceGlassBorderDark : effectColors.surfaceGlassBorderLight;
   const HeaderIcon = navigationItems.find((item) => item.href === pathname)?.Icon ?? HouseIcon;
-  const titleFontSize = title.length > 10 ? 26 : 31;
+  const titleFontSize = 26;
 
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={{ backgroundColor: colors.background, flex: 1 }}>
@@ -67,7 +67,7 @@ export function MainLayout({ children, description, title }: MainLayoutProps) {
                 {title}
               </Text>
               {description ? (
-                <Text fontSize={15} lineHeight={20} style={{ color: colors.muted }}>
+                <Text fontSize={12} lineHeight={20} numberOfLines={1} style={{ color: colors.muted }}>
                   {description}
                 </Text>
               ) : null}

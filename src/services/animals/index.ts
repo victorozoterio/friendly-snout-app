@@ -10,12 +10,14 @@ export {
   getAnimalStageTotals,
   getAnimals,
   updateAnimal,
+  updateAnimalPhoto,
 } from './service';
 export type {
   Animal,
   AnimalBreed,
   AnimalFivFelv,
   AnimalMutationInput,
+  AnimalPhotoUpload,
   AnimalSex,
   AnimalSize,
   AnimalSpecies,

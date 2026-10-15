@@ -1,18 +1,17 @@
 import { Redirect, useFocusEffect, useRouter } from 'expo-router';
-import {
-  ArrowClockwiseIcon,
-  CaretRightIcon,
-  MagnifyingGlassIcon,
-  PillIcon,
-  PlusIcon,
-  TagIcon,
-  WarningCircleIcon,
-  XCircleIcon,
-} from 'phosphor-react-native';
+import { ArrowClockwiseIcon, CaretRightIcon, PillIcon, TagIcon, WarningCircleIcon } from 'phosphor-react-native';
 import { useCallback, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, TextInput } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, RefreshControl } from 'react-native';
 import { Card, Text, XStack, YStack } from 'tamagui';
 
+import {
+  ListFloatingAction,
+  ListItemCard,
+  ListItemChevron,
+  ListScreenControls,
+  ListSearchField,
+  listContentContainerStyle,
+} from '../src/components/list-screen-elements';
 import { MainLayout, useAppColors } from '../src/components/main-layout';
 import { useAuth } from '../src/contexts/auth-context';
 import { medicineRoutes, routes } from '../src/routes';
@@ -44,45 +43,39 @@ function MedicineCard({ medicine, onPress }: { medicine: Medicine; onPress: () =
   const quantityLabel = medicine.quantity === 1 ? '1 unidade' : `${medicine.quantity} unidades`;
 
   return (
-    <Pressable
-      accessibilityLabel={`Editar ${medicine.name}`}
-      onPress={onPress}
-      style={({ pressed }) => ({ opacity: pressed ? 0.76 : 1 })}
-    >
-      <Card borderWidth={1} p='$3' rounded='$4' style={{ backgroundColor: colors.card, borderColor: colors.border }}>
-        <XStack gap='$3' items='center'>
-          <XStack
-            height={60}
-            items='center'
-            justify='center'
-            rounded='$4'
-            style={{ backgroundColor: colors.cardMuted }}
-            width={60}
-          >
-            <PillIcon color={colors.primary} size={28} weight='fill' />
-          </XStack>
-          <YStack flex={1} gap='$1'>
-            <XStack gap='$2' items='center' justify='space-between'>
-              <Text flex={1} fontSize={17} fontWeight='800' numberOfLines={1} style={{ color: colors.text }}>
-                {safeCapitalize(medicine.name)}
-              </Text>
-              <CaretRightIcon color={colors.muted} size={18} weight='bold' />
-            </XStack>
-            {medicine.description ? (
-              <Text fontSize={13} numberOfLines={1} style={{ color: colors.muted }}>
-                {medicine.description}
-              </Text>
-            ) : null}
-            <XStack gap='$2' items='center' mt='$1'>
-              <MedicineStatusBadge isActive={medicine.isActive} />
-              <Text fontSize={12} numberOfLines={1} style={{ color: colors.muted }}>
-                {quantityLabel} em estoque
-              </Text>
-            </XStack>
-          </YStack>
+    <ListItemCard accessibilityLabel={`Editar ${medicine.name}`} onPress={onPress}>
+      <XStack gap='$3' items='center'>
+        <XStack
+          height={60}
+          items='center'
+          justify='center'
+          rounded='$4'
+          style={{ backgroundColor: colors.cardMuted }}
+          width={60}
+        >
+          <PillIcon color={colors.primary} size={28} weight='fill' />
         </XStack>
-      </Card>
-    </Pressable>
+        <YStack flex={1} gap='$1'>
+          <XStack gap='$2' items='center' justify='space-between'>
+            <Text flex={1} fontSize={17} fontWeight='800' numberOfLines={1} style={{ color: colors.text }}>
+              {safeCapitalize(medicine.name)}
+            </Text>
+            <ListItemChevron />
+          </XStack>
+          {medicine.description ? (
+            <Text fontSize={13} numberOfLines={1} style={{ color: colors.muted }}>
+              {medicine.description}
+            </Text>
+          ) : null}
+          <XStack gap='$2' items='center' mt='$1'>
+            <MedicineStatusBadge isActive={medicine.isActive} />
+            <Text fontSize={12} numberOfLines={1} style={{ color: colors.muted }}>
+              {quantityLabel} em estoque
+            </Text>
+          </XStack>
+        </YStack>
+      </XStack>
+    </ListItemCard>
   );
 }
 
@@ -244,29 +237,14 @@ function MedicinesList() {
   return (
     <MainLayout description='Gerencie o estoque de medicamentos' title='Medicamentos'>
       <YStack flex={1}>
-        <YStack gap='$3' pb='$3' px='$5'>
-          <XStack
-            gap='$2'
-            items='center'
-            px='$3'
-            rounded='$4'
-            style={{ backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }}
-          >
-            <MagnifyingGlassIcon color={colors.muted} size={20} />
-            <TextInput
-              accessibilityLabel='Buscar medicamento pelo nome'
-              onChangeText={handleSearchChange}
-              placeholder='Buscar pelo nome...'
-              placeholderTextColor={colors.muted}
-              style={{ color: colors.text, flex: 1, fontSize: 15, paddingVertical: 12 }}
-              value={searchTerm}
-            />
-            {searchTerm.length > 0 ? (
-              <Pressable accessibilityLabel='Limpar busca' onPress={clearSearch}>
-                <XCircleIcon color={colors.muted} size={20} weight='fill' />
-              </Pressable>
-            ) : null}
-          </XStack>
+        <ListScreenControls>
+          <ListSearchField
+            accessibilityLabel='Buscar medicamento pelo nome'
+            onChangeText={handleSearchChange}
+            onClear={clearSearch}
+            placeholder='Buscar pelo nome...'
+            value={searchTerm}
+          />
 
           <Pressable
             accessibilityLabel='Gerenciar marcas de medicamentos'
@@ -314,7 +292,7 @@ function MedicinesList() {
               Não foi possível atualizar agora. Os últimos dados carregados continuam visíveis.
             </Text>
           ) : null}
-        </YStack>
+        </ListScreenControls>
 
         {isLoading ? (
           <YStack flex={1} px='$5'>
@@ -324,7 +302,7 @@ function MedicinesList() {
           <MedicinesError onRetry={() => void loadMedicines(activeSearch)} />
         ) : (
           <FlatList
-            contentContainerStyle={{ flexGrow: 1, gap: 12, paddingBottom: 96, paddingHorizontal: 20 }}
+            contentContainerStyle={listContentContainerStyle}
             data={medicines}
             keyboardShouldPersistTaps='handled'
             keyExtractor={(medicine) => medicine.uuid}
@@ -352,32 +330,11 @@ function MedicinesList() {
           />
         )}
 
-        <Pressable
+        <ListFloatingAction
           accessibilityLabel='Cadastrar novo medicamento'
           onPress={() => router.push(routes.medicineForm)}
-          style={({ pressed }) => ({
-            backgroundColor: colors.primary,
-            borderRadius: 28,
-            bottom: 20,
-            elevation: 6,
-            opacity: pressed ? 0.85 : 1,
-            paddingHorizontal: 18,
-            paddingVertical: 14,
-            position: 'absolute',
-            right: 20,
-            shadowColor: palette.black,
-            shadowOffset: { height: 3, width: 0 },
-            shadowOpacity: 0.25,
-            shadowRadius: 8,
-          })}
-        >
-          <XStack gap='$2' items='center'>
-            <PlusIcon color={palette.neutral0} size={20} weight='bold' />
-            <Text fontSize={15} fontWeight='700' style={{ color: palette.neutral0 }}>
-              Novo medicamento
-            </Text>
-          </XStack>
-        </Pressable>
+          label='Novo medicamento'
+        />
       </YStack>
     </MainLayout>
   );

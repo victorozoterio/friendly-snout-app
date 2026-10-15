@@ -1,13 +1,15 @@
 import { useRouter } from 'expo-router';
 import { WarningCircleIcon } from 'phosphor-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, ScrollView } from 'react-native';
+import { ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card, Text, XStack, YStack } from 'tamagui';
+import { useAppDialog } from '../contexts/app-dialog-context';
 import { routes } from '../routes';
 import {
   type AnimalFormFieldErrors,
   type AnimalFormValues,
+  type AnimalPhotoUpload,
   type AnimalSpeciesOption,
   type CreateAnimalInput,
   createAnimal,
@@ -41,6 +43,7 @@ export function AnimalFormScreen({ animalUuid }: AnimalFormScreenProps) {
   const isEdit = Boolean(animalUuid);
   const router = useRouter();
   const colors = useAppColors();
+  const { showSuccess } = useAppDialog();
   const scrollRef = useRef<ScrollView>(null);
   const [values, setValues] = useState<AnimalFormValues>(emptyAnimalFormValues);
   const [species, setSpecies] = useState<AnimalSpeciesOption[]>([]);
@@ -51,6 +54,8 @@ export function AnimalFormScreen({ animalUuid }: AnimalFormScreenProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [reloadKey, setReloadKey] = useState(0);
+  const [currentPhotoUrl, setCurrentPhotoUrl] = useState<string | null>(null);
+  const [selectedPhoto, setSelectedPhoto] = useState<AnimalPhotoUpload | null>(null);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: reloadKey intentionally retries this request.
   useEffect(() => {
@@ -70,6 +75,8 @@ export function AnimalFormScreen({ animalUuid }: AnimalFormScreenProps) {
 
         setSpecies(mergeAnimalIntoSpecies(availableSpecies, animal));
         setValues(animal ? toAnimalFormValues(animal) : emptyAnimalFormValues);
+        setCurrentPhotoUrl(animal?.photoUrl ?? null);
+        setSelectedPhoto(null);
         setCurrentStep(0);
         setFieldErrors({});
       } catch (error: unknown) {
@@ -203,14 +210,14 @@ export function AnimalFormScreen({ animalUuid }: AnimalFormScreenProps) {
 
     try {
       if (animalUuid) {
-        await updateAnimal(animalUuid, { ...input, status: data.status });
-        Alert.alert('Animal atualizado', 'As alterações foram salvas com sucesso.');
+        await updateAnimal(animalUuid, { ...input, status: data.status }, selectedPhoto ?? undefined);
+        showSuccess({ description: 'As alterações foram salvas com sucesso.', title: 'Animal atualizado' });
         router.back();
         return;
       }
 
-      await createAnimal(input);
-      Alert.alert('Animal cadastrado', 'O novo animal foi cadastrado com sucesso.');
+      await createAnimal(input, selectedPhoto ?? undefined);
+      showSuccess({ description: 'O novo animal foi cadastrado com sucesso.', title: 'Animal cadastrado' });
       router.replace(routes.animals);
     } catch (error: unknown) {
       const fallback = isEdit
@@ -253,6 +260,8 @@ export function AnimalFormScreen({ animalUuid }: AnimalFormScreenProps) {
                 fieldErrors={fieldErrors}
                 isEdit={isEdit}
                 isFeline={isFeline}
+                onPhotoSelected={setSelectedPhoto}
+                photoUrl={selectedPhoto?.uri ?? currentPhotoUrl}
                 selectedSpecies={selectedSpecies}
                 speciesOptions={speciesOptions}
                 step={currentStep}

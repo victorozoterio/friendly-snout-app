@@ -2,6 +2,7 @@
 export const routes = {
   animalForm: '/animal-form',
   animals: '/animals',
+  forgotPassword: '/forgot-password',
   home: '/',
   login: '/login',
   medicineBrands: '/medicine-brands',
@@ -33,6 +34,7 @@ export const routeNames = {
   createMedicineApplication: 'create-medicine-application/[animalUuid]',
   editAnimal: 'edit-animal/[animalUuid]',
   editMedicine: 'edit-medicine/[medicineUuid]',
+  forgotPassword: 'forgot-password',
   home: 'index',
   login: 'login',
   medicineBrands: 'medicine-brands',

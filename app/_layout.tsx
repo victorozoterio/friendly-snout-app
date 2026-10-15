@@ -14,6 +14,7 @@ export default function RootLayout() {
       <AuthProvider>
         <Stack screenOptions={{ animation: 'fade', contentStyle: { backgroundColor } }}>
           <Stack.Screen name={routeNames.login} options={{ headerShown: false }} />
+          <Stack.Screen name={routeNames.forgotPassword} options={{ headerShown: false }} />
           <Stack.Screen name={routeNames.home} options={{ headerShown: false }} />
           <Stack.Screen name={routeNames.animals} options={{ headerShown: false }} />
           <Stack.Screen name={routeNames.animalDetails} options={{ headerShown: false }} />
