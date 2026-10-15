@@ -165,7 +165,7 @@ export default function Login() {
             color='$white'
             fontSize={18}
             fontWeight='700'
-            mt='$2'
+            mt='$4'
             onPress={handleSignIn}
             pressStyle={{
               bg: '$secondary',

@@ -380,7 +380,7 @@ function MedicineBrandsList() {
     <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ backgroundColor: colors.background, flex: 1 }}>
       <ScreenHeader description='Marcas dos medicamentos' title='Marcas' />
       <YStack flex={1}>
-        <YStack gap='$3' pb='$3' px='$5'>
+        <YStack gap='$3' pt='$3' pb='$3' px='$5'>
           <XStack
             gap='$2'
             items='center'
