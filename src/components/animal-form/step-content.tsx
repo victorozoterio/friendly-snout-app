@@ -1,7 +1,13 @@
 import { Card, Text, YStack } from 'tamagui';
 
-import type { AnimalFormFieldErrors, AnimalFormValues, AnimalSpeciesOption } from '../../services/animals';
+import type {
+  AnimalFormFieldErrors,
+  AnimalFormValues,
+  AnimalPhotoUpload,
+  AnimalSpeciesOption,
+} from '../../services/animals';
 import { formatBirthDateInput } from '../../utils/animal-form';
+import { AnimalProfilePhoto } from '../animal-profile-photo';
 import { FormErrorInline } from '../form-error-inline';
 import { useAppColors } from '../main-layout';
 import { castrationOptions, type FormOption, sexOptions, sizeOptions, stageOptions, testOptions } from './constants';
@@ -16,6 +22,8 @@ type AnimalFormStepContentProps = {
   fieldErrors: AnimalFormFieldErrors;
   isEdit: boolean;
   isFeline: boolean;
+  onPhotoSelected: (photo: AnimalPhotoUpload) => void;
+  photoUrl: string | null;
   selectedSpecies?: AnimalSpeciesOption;
   speciesOptions: FormOption<string>[];
   step: number;
@@ -29,6 +37,8 @@ export function AnimalFormStepContent({
   fieldErrors,
   isEdit,
   isFeline,
+  onPhotoSelected,
+  photoUrl,
   selectedSpecies,
   speciesOptions,
   step,
@@ -42,6 +52,8 @@ export function AnimalFormStepContent({
           changeField={changeField}
           changeSpecies={changeSpecies}
           fieldErrors={fieldErrors}
+          onPhotoSelected={onPhotoSelected}
+          photoUrl={photoUrl}
           selectedSpecies={selectedSpecies}
           speciesOptions={speciesOptions}
           values={values}
@@ -60,7 +72,15 @@ export function AnimalFormStepContent({
 
 type BasicStepProps = Pick<
   AnimalFormStepContentProps,
-  'breedOptions' | 'changeField' | 'changeSpecies' | 'fieldErrors' | 'selectedSpecies' | 'speciesOptions' | 'values'
+  | 'breedOptions'
+  | 'changeField'
+  | 'changeSpecies'
+  | 'fieldErrors'
+  | 'onPhotoSelected'
+  | 'photoUrl'
+  | 'selectedSpecies'
+  | 'speciesOptions'
+  | 'values'
 >;
 
 function BasicStep({
@@ -68,12 +88,15 @@ function BasicStep({
   changeField,
   changeSpecies,
   fieldErrors,
+  onPhotoSelected,
+  photoUrl,
   selectedSpecies,
   speciesOptions,
   values,
 }: BasicStepProps) {
   return (
     <>
+      <AnimalProfilePhoto onPhotoSelected={onPhotoSelected} photoUrl={photoUrl} speciesName={selectedSpecies?.name} />
       <InputField
         error={fieldErrors.name}
         label='Nome'

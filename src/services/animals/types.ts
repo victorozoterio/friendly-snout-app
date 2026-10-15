@@ -87,6 +87,13 @@ export type AnimalMutationInput = {
   notes: string;
 };
 
+/** Arquivo de imagem destinado exclusivamente à foto principal do animal. */
+export type AnimalPhotoUpload = {
+  mimeType: string;
+  name: string;
+  uri: string;
+};
+
 export type CreateAnimalInput = AnimalMutationInput;
 
 export type UpdateAnimalInput = AnimalMutationInput & {

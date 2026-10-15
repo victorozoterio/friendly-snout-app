@@ -11,25 +11,22 @@ import {
   WarningCircleIcon,
 } from 'phosphor-react-native';
 import { useCallback, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  ImageBackground,
-  Modal,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-} from 'react-native';
+import { ActivityIndicator, Alert, Image, Modal, Pressable, RefreshControl, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card, Text, XStack, YStack } from 'tamagui';
-
+import { AnimalProfilePhoto } from '../../src/components/animal-profile-photo';
 import { AnimalStageBadge } from '../../src/components/animal-stage-badge';
 import { useAppColors } from '../../src/components/main-layout';
 import { MedicineApplicationCalendar } from '../../src/components/medicine-application-calendar';
 import { useAuth } from '../../src/contexts/auth-context';
 import { animalRoutes, routes } from '../../src/routes';
-import { type Animal, deleteAnimal, getAnimal, getAnimalErrorMessage } from '../../src/services/animals';
+import {
+  type Animal,
+  deleteAnimal,
+  getAnimal,
+  getAnimalErrorMessage,
+  updateAnimalPhoto,
+} from '../../src/services/animals';
 import { type Attachment, getAnimalAttachments } from '../../src/services/attachments';
 import { getMedicineApplicationsByAnimal, type MedicineApplication } from '../../src/services/medicine-applications';
 import { actionColors, effectColors, palette } from '../../src/theme';
@@ -159,7 +156,13 @@ function AnimalDetailsError({ onRetry, onBack }: { onBack: () => void; onRetry: 
   );
 }
 
-function AnimalDetailsContent({ animal }: { animal: Animal }) {
+function AnimalDetailsContent({
+  animal,
+  onPhotoUpdated,
+}: {
+  animal: Animal;
+  onPhotoUpdated: (animal: Animal) => void;
+}) {
   const colors = useAppColors();
   const router = useRouter();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -169,12 +172,10 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
   const [scheduledApplications, setScheduledApplications] = useState<MedicineApplication[]>([]);
   const [isAgendaLoading, setIsAgendaLoading] = useState(true);
   const [hasAgendaError, setHasAgendaError] = useState(false);
+  const [isPhotoUploading, setIsPhotoUploading] = useState(false);
 
   const notInformed = 'Não informado';
   const isFeline = animal.species.name.trim().toLocaleLowerCase('pt-BR') === 'gato';
-
-  const catPlaceholder = require('../../assets/profiles-cat.png');
-  const dogPlaceholder = require('../../assets/profiles-dog.png');
 
   const loadPreviewData = useCallback(async () => {
     setIsAgendaLoading(true);
@@ -230,6 +231,18 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
     }
   };
 
+  const handlePhotoSelected = async (photo: Parameters<typeof updateAnimalPhoto>[1]) => {
+    setIsPhotoUploading(true);
+
+    try {
+      onPhotoUpdated(await updateAnimalPhoto(animal.uuid, photo));
+    } catch (error: unknown) {
+      Alert.alert('Não foi possível atualizar a foto', getAnimalErrorMessage(error, 'Tente novamente.'));
+    } finally {
+      setIsPhotoUploading(false);
+    }
+  };
+
   const generalRows = [
     { label: 'Espécie', value: animal.species.name },
     { label: 'Raça', value: animal.breed.name },
@@ -261,27 +274,15 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
 
   return (
     <YStack gap='$4' pb='$8'>
-      {/* Top Banner Header with Pattern */}
-      <ImageBackground
-        resizeMode='cover'
-        source={require('../../assets/bk-grnd.png')}
-        style={{
-          alignItems: 'center',
-          height: 150,
-          justifyContent: 'space-between',
-          paddingHorizontal: 16,
-          paddingTop: 16,
-          width: '100%',
-        }}
-      >
-        <XStack items='center' justify='space-between' width='100%'>
+      <YStack px='$5' pt='$4'>
+        <XStack items='center' justify='space-between'>
           <Pressable
             accessibilityLabel='Voltar'
             onPress={() => router.back()}
             style={({ pressed }) => ({
               alignItems: 'center',
-              backgroundColor: effectColors.imageHeaderButton,
-              borderColor: effectColors.imageHeaderButtonBorder,
+              backgroundColor: colors.card,
+              borderColor: colors.border,
               borderRadius: 14,
               borderWidth: 1,
               height: 44,
@@ -290,7 +291,7 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
               width: 44,
             })}
           >
-            <ArrowLeftIcon color={palette.neutral0} size={22} weight='bold' />
+            <ArrowLeftIcon color={colors.text} size={22} weight='bold' />
           </Pressable>
 
           <Pressable
@@ -298,8 +299,8 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
             onPress={() => router.push(animalRoutes.edit(animal.uuid))}
             style={({ pressed }) => ({
               alignItems: 'center',
-              backgroundColor: effectColors.imageHeaderButton,
-              borderColor: effectColors.imageHeaderButtonBorder,
+              backgroundColor: colors.card,
+              borderColor: colors.border,
               borderRadius: 14,
               borderWidth: 1,
               height: 44,
@@ -308,56 +309,23 @@ function AnimalDetailsContent({ animal }: { animal: Animal }) {
               width: 44,
             })}
           >
-            <PencilSimpleIcon color={palette.neutral0} size={22} weight='bold' />
+            <PencilSimpleIcon color={colors.text} size={22} weight='bold' />
           </Pressable>
         </XStack>
-      </ImageBackground>
+      </YStack>
 
-      {/* Animal Profile Image Card (Overlapping header) */}
-      <YStack items='center' style={{ marginTop: -60 }}>
-        <YStack>
-          <Card
-            borderWidth={3}
-            elevation={6}
-            height={120}
-            overflow='hidden'
-            rounded='$6'
-            style={{
-              backgroundColor: colors.card,
-              borderColor: colors.background,
-              shadowColor: palette.black,
-              shadowOffset: { height: 4, width: 0 },
-              shadowOpacity: 0.25,
-              shadowRadius: 8,
-            }}
-            width={120}
-          >
-            {animal.photoUrl ? (
-              <Image
-                accessibilityLabel={`Foto de ${animal.name}`}
-                resizeMode='cover'
-                source={{ uri: animal.photoUrl }}
-                style={{ height: '100%', width: '100%' }}
-              />
-            ) : (
-              <Image
-                accessibilityLabel={`Avatar de ${animal.name}`}
-                resizeMode='contain'
-                source={isFeline ? catPlaceholder : dogPlaceholder}
-                style={{ height: '100%', width: '100%' }}
-              />
-            )}
-          </Card>
-        </YStack>
-
-        {/* Name and Basic Info */}
+      <YStack items='center'>
+        <AnimalProfilePhoto
+          isLoading={isPhotoUploading}
+          onPhotoSelected={handlePhotoSelected}
+          photoUrl={animal.photoUrl}
+          speciesName={animal.species.name}
+        />
         <YStack gap='$2' items='center' mt='$3' px='$5'>
           <Text fontSize={26} fontWeight='800' style={{ color: colors.text, textAlign: 'center' }}>
             {animal.name}
           </Text>
-          <XStack gap='$2' items='center'>
-            <AnimalStageBadge stage={animal.status} />
-          </XStack>
+          <AnimalStageBadge stage={animal.status} />
           <Text fontSize={15} style={{ color: colors.muted, textAlign: 'center' }}>
             {animal.species.name} • {animal.breed.name}
           </Text>
@@ -766,7 +734,7 @@ function AnimalDetails() {
                 Não foi possível atualizar agora. Os últimos dados carregados continuam visíveis.
               </Text>
             ) : null}
-            <AnimalDetailsContent animal={animal} />
+            <AnimalDetailsContent animal={animal} onPhotoUpdated={setAnimal} />
           </YStack>
         ) : null}
       </ScrollView>

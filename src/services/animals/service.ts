@@ -2,6 +2,7 @@ import { api } from '../api';
 import type {
   Animal,
   AnimalMutationInput,
+  AnimalPhotoUpload,
   AnimalStageTotals,
   CreateAnimalInput,
   GetAnimalsParams,
@@ -10,7 +11,17 @@ import type {
   UpdateAnimalInput,
 } from './types';
 
-function toAnimalFormData(input: AnimalMutationInput, status?: UpdateAnimalInput['status']) {
+function appendAnimalPhoto(formData: FormData, photo?: AnimalPhotoUpload) {
+  if (!photo) return;
+
+  formData.append('file', {
+    name: photo.name,
+    type: photo.mimeType,
+    uri: photo.uri,
+  } as unknown as Blob);
+}
+
+function toAnimalFormData(input: AnimalMutationInput, status?: UpdateAnimalInput['status'], photo?: AnimalPhotoUpload) {
   const formData = new FormData();
 
   formData.append('name', input.name);
@@ -27,6 +38,7 @@ function toAnimalFormData(input: AnimalMutationInput, status?: UpdateAnimalInput
   formData.append('felv', input.felv);
   formData.append('notes', input.notes);
   if (status) formData.append('status', status);
+  appendAnimalPhoto(formData, photo);
 
   return formData;
 }
@@ -53,13 +65,22 @@ export async function getAnimalSpecies() {
   return data.data;
 }
 
-export async function createAnimal(input: CreateAnimalInput): Promise<Animal> {
-  const { data } = await api.post<Animal>('/animals', toAnimalFormData(input));
+export async function createAnimal(input: CreateAnimalInput, photo?: AnimalPhotoUpload): Promise<Animal> {
+  const { data } = await api.post<Animal>('/animals', toAnimalFormData(input, undefined, photo));
   return data;
 }
 
-export async function updateAnimal(uuid: string, input: UpdateAnimalInput): Promise<Animal> {
-  const { data } = await api.patch<Animal>(`/animals/${uuid}`, toAnimalFormData(input, input.status));
+export async function updateAnimal(uuid: string, input: UpdateAnimalInput, photo?: AnimalPhotoUpload): Promise<Animal> {
+  const { data } = await api.patch<Animal>(`/animals/${uuid}`, toAnimalFormData(input, input.status, photo));
+  return data;
+}
+
+/** Substitui apenas a foto principal, sem alterar os demais dados do animal. */
+export async function updateAnimalPhoto(uuid: string, photo: AnimalPhotoUpload): Promise<Animal> {
+  const formData = new FormData();
+  appendAnimalPhoto(formData, photo);
+
+  const { data } = await api.patch<Animal>(`/animals/${uuid}`, formData);
   return data;
 }
 
