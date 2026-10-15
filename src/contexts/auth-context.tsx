@@ -2,6 +2,19 @@ import { createContext, type PropsWithChildren, useContext, useEffect, useMemo, 
 
 import { signIn as requestSignIn } from '../services/auth';
 import { tokenStorage } from '../services/auth/storage';
+import { unregisterPushDevice } from '../services/push-notifications/service';
+import { clearStoredPushToken, getStoredPushToken } from '../services/push-notifications/storage';
+
+async function unregisterCurrentPushDevice() {
+  const expoPushToken = await getStoredPushToken();
+  if (!expoPushToken) return;
+
+  try {
+    await unregisterPushDevice(expoPushToken);
+  } finally {
+    await clearStoredPushToken();
+  }
+}
 
 type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
 
@@ -40,6 +53,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         setStatus('authenticated');
       },
       logout: async () => {
+        await unregisterCurrentPushDevice().catch(() => undefined);
         await tokenStorage.clearTokens();
         setStatus('unauthenticated');
       },

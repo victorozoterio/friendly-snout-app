@@ -4,7 +4,7 @@ import { Modal, Pressable, useColorScheme } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card, Text, XStack, YStack } from 'tamagui';
 
-import { appColors, effectColors, palette } from '../theme';
+import { appColors, effectColors, palette } from '../theme/colors';
 
 type AppDialogType = 'confirmation' | 'error' | 'success' | 'warning';
 

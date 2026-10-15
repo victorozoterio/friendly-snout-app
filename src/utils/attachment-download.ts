@@ -1,12 +1,30 @@
 import * as FileSystem from 'expo-file-system/legacy';
-import * as MediaLibrary from 'expo-media-library/legacy';
-import * as Sharing from 'expo-sharing';
+import type * as MediaLibraryModule from 'expo-media-library/legacy';
+import type * as SharingModule from 'expo-sharing';
 import { Platform } from 'react-native';
 
 import type { Attachment } from '../services/attachments';
 import { getAttachmentName, isImageAttachment } from './attachment';
 
 type AttachmentDownloadResult = 'cancelled' | 'permission-denied' | 'saved' | 'shared';
+
+function getMediaLibraryModule(): typeof MediaLibraryModule {
+  try {
+    return require('expo-media-library/legacy') as typeof MediaLibraryModule;
+  } catch {
+    throw new Error('A versão instalada do aplicativo não possui o módulo de galeria. Reinstale a Development Build.');
+  }
+}
+
+function getSharingModule(): typeof SharingModule {
+  try {
+    return require('expo-sharing') as typeof SharingModule;
+  } catch {
+    throw new Error(
+      'A versão instalada do aplicativo não possui o módulo de compartilhamento. Reinstale a Development Build.',
+    );
+  }
+}
 
 function getAttachmentMimeType(attachment: Attachment) {
   const type = attachment.type.toLocaleLowerCase('pt-BR');
@@ -39,10 +57,11 @@ async function downloadToCache(attachment: Attachment) {
 }
 
 async function saveImageToGallery(fileUri: string): Promise<AttachmentDownloadResult> {
-  const permission = await MediaLibrary.requestPermissionsAsync(true);
+  const mediaLibrary = getMediaLibraryModule();
+  const permission = await mediaLibrary.requestPermissionsAsync(true);
   if (!permission.granted) return 'permission-denied';
 
-  await MediaLibrary.saveToLibraryAsync(fileUri);
+  await mediaLibrary.saveToLibraryAsync(fileUri);
   return 'saved';
 }
 
@@ -61,9 +80,10 @@ async function saveDocumentOnAndroid(attachment: Attachment, fileUri: string): P
 }
 
 async function saveDocumentOniOS(attachment: Attachment, fileUri: string): Promise<AttachmentDownloadResult> {
-  if (!(await Sharing.isAvailableAsync())) throw new Error('O compartilhamento de arquivos não está disponível.');
+  const sharing = getSharingModule();
+  if (!(await sharing.isAvailableAsync())) throw new Error('O compartilhamento de arquivos não está disponível.');
 
-  await Sharing.shareAsync(fileUri, {
+  await sharing.shareAsync(fileUri, {
     dialogTitle: `Salvar ${getAttachmentName(attachment)}`,
     mimeType: getAttachmentMimeType(attachment),
   });
