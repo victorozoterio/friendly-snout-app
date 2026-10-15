@@ -12,6 +12,20 @@ import {
   signInSchema,
 } from '../src/services/auth';
 
+const defaultInputBorderStyle = {
+  borderColor: '$border',
+  borderWidth: 1,
+} as const;
+
+const errorInputBorderStyle = {
+  borderColor: '$error',
+  borderWidth: 2,
+  focusStyle: {
+    borderColor: '$error',
+    borderWidth: 2,
+  },
+} as const;
+
 export default function Login() {
   const router = useRouter();
 
@@ -74,12 +88,16 @@ export default function Login() {
     void submitCredentials();
   };
 
+  const hasApiError = Boolean(apiError);
+  const emailHasError = Boolean(fieldErrors.email) || hasApiError;
+  const passwordHasError = Boolean(fieldErrors.password) || hasApiError;
+
   return (
     <PublicAuthLayout>
       <YStack gap='$5' width='100%'>
         <PublicAuthLogo />
 
-        <YStack gap='$2' width='100%'>
+        <YStack gap='$1' width='100%'>
           <YStack gap='$1'>
             <Label color='$primary' fontSize={18} fontWeight='700' htmlFor='email'>
               Email
@@ -88,8 +106,6 @@ export default function Login() {
             <Input
               autoCapitalize='none'
               bg='$white'
-              borderColor={fieldErrors.email || apiError ? '$error' : '$border'}
-              borderWidth={1}
               color='$text'
               id='email'
               onChangeText={(value) => {
@@ -107,6 +123,7 @@ export default function Login() {
               rounded='$2'
               size='$5'
               value={email}
+              {...(emailHasError ? errorInputBorderStyle : defaultInputBorderStyle)}
             />
 
             <FormErrorInline message={fieldErrors.email} />
@@ -119,8 +136,6 @@ export default function Login() {
 
             <Input
               bg='$white'
-              borderColor={fieldErrors.password || apiError ? '$error' : '$border'}
-              borderWidth={1}
               color='$text'
               id='password'
               onChangeText={(value) => {
@@ -139,6 +154,7 @@ export default function Login() {
               secureTextEntry
               size='$5'
               value={password}
+              {...(passwordHasError ? errorInputBorderStyle : defaultInputBorderStyle)}
             />
 
             <FormErrorInline message={fieldErrors.password || apiError} />

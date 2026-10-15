@@ -67,7 +67,7 @@ export function MainLayout({ children, description, title }: MainLayoutProps) {
                 {title}
               </Text>
               {description ? (
-                <Text fontSize={15} lineHeight={20} style={{ color: colors.muted }}>
+                <Text fontSize={12} lineHeight={20} style={{ color: colors.muted }}>
                   {description}
                 </Text>
               ) : null}
