@@ -1,10 +1,10 @@
 import * as ImagePicker from 'expo-image-picker';
 import { CameraIcon, ImageIcon } from 'phosphor-react-native';
 import { useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Animated, Image, Modal, PanResponder, Pressable } from 'react-native';
+import { ActivityIndicator, Animated, Image, Modal, PanResponder, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card, Text, XStack, YStack } from 'tamagui';
-
+import { useAppDialog } from '../contexts/app-dialog-context';
 import type { AnimalPhotoUpload } from '../services/animals';
 import { effectColors, palette } from '../theme';
 import { createAnimalPhotoUpload, maxAnimalPhotoFileSize } from '../utils/animal-photo';
@@ -34,6 +34,7 @@ export function AnimalProfilePhoto({
   speciesName,
 }: AnimalProfilePhotoProps) {
   const colors = useAppColors();
+  const { showWarning } = useAppDialog();
   const isFeline = speciesName?.trim().toLocaleLowerCase('pt-BR') === 'gato';
   const placeholder = isFeline ? require('../../assets/profiles-cat.png') : require('../../assets/profiles-dog.png');
   const isEditable = Boolean(onPhotoSelected);
@@ -41,13 +42,13 @@ export function AnimalProfilePhoto({
 
   const processSelectedPhoto = async (asset: ImagePicker.ImagePickerAsset) => {
     if (asset.fileSize && asset.fileSize > maxAnimalPhotoFileSize) {
-      Alert.alert('Imagem muito grande', 'Escolha uma imagem de até 10 MB.');
+      showWarning({ description: 'Escolha uma imagem de até 10 MB.', title: 'Imagem muito grande' });
       return;
     }
 
     const photo = createAnimalPhotoUpload(asset);
     if (!photo) {
-      Alert.alert('Formato não suportado', 'Escolha uma imagem JPG, PNG, AVIF ou WEBP.');
+      showWarning({ description: 'Escolha uma imagem JPG, PNG, AVIF ou WEBP.', title: 'Formato não suportado' });
       return;
     }
 
@@ -57,7 +58,7 @@ export function AnimalProfilePhoto({
   const takePhoto = async () => {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('Permissão necessária', 'Permita o acesso à câmera para tirar uma foto.');
+      showWarning({ description: 'Permita o acesso à câmera para tirar uma foto.', title: 'Permissão necessária' });
       return;
     }
 
@@ -68,7 +69,10 @@ export function AnimalProfilePhoto({
   const pickFromGallery = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('Permissão necessária', 'Permita o acesso à galeria para escolher uma imagem.');
+      showWarning({
+        description: 'Permita o acesso à galeria para escolher uma imagem.',
+        title: 'Permissão necessária',
+      });
       return;
     }
 

@@ -3,12 +3,13 @@ import * as ImagePicker from 'expo-image-picker';
 import { Redirect, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { Camera, File as FileIcon, Image as ImageIcon, Paperclip, PlusIcon, Trash, X } from 'phosphor-react-native';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Linking, Modal, Pressable, ScrollView } from 'react-native';
+import { ActivityIndicator, Image, Linking, Modal, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card, Text, XStack, YStack } from 'tamagui';
 
 import { useAppColors } from '../../src/components/main-layout';
 import { ScreenHeader } from '../../src/components/screen-header';
+import { useAppDialog } from '../../src/contexts/app-dialog-context';
 import { useAuth } from '../../src/contexts/auth-context';
 import { routes } from '../../src/routes';
 import {
@@ -62,6 +63,7 @@ export default function AnimalAttachmentsScreen() {
   const { animalUuid } = useLocalSearchParams<{ animalUuid: string }>();
   const { status } = useAuth();
   const colors = useAppColors();
+  const { confirm, showError, showWarning } = useAppDialog();
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
@@ -95,13 +97,16 @@ export default function AnimalAttachmentsScreen() {
 
     const size = file.fileSize ?? file.size;
     if (size && size > maxAttachmentFileSize) {
-      Alert.alert('Arquivo muito grande', 'Escolha um arquivo de até 10 MB.');
+      showWarning({ description: 'Escolha um arquivo de até 10 MB.', title: 'Arquivo muito grande' });
       return;
     }
 
     const upload = createAttachmentUpload(file);
     if (!upload) {
-      Alert.alert('Formato não suportado', 'Escolha uma imagem JPG, PNG, AVIF, WEBP ou um arquivo PDF.');
+      showWarning({
+        description: 'Escolha uma imagem JPG, PNG, AVIF, WEBP ou um arquivo PDF.',
+        title: 'Formato não suportado',
+      });
       return;
     }
 
@@ -112,7 +117,10 @@ export default function AnimalAttachmentsScreen() {
       const attachment = await uploadAnimalAttachment(animalUuid, upload);
       setAttachments((currentAttachments) => [attachment, ...currentAttachments]);
     } catch (error: unknown) {
-      Alert.alert('Não foi possível enviar o anexo', getAttachmentErrorMessage(error, 'Tente novamente.'));
+      showError({
+        description: getAttachmentErrorMessage(error, 'Tente novamente.'),
+        title: 'Não foi possível enviar o anexo',
+      });
     } finally {
       setIsUploading(false);
     }
@@ -121,7 +129,7 @@ export default function AnimalAttachmentsScreen() {
   const takePhoto = async () => {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('Permissão necessária', 'Permita o acesso à câmera para tirar uma foto.');
+      showWarning({ description: 'Permita o acesso à câmera para tirar uma foto.', title: 'Permissão necessária' });
       return;
     }
 
@@ -132,7 +140,10 @@ export default function AnimalAttachmentsScreen() {
   const pickFromGallery = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('Permissão necessária', 'Permita o acesso à galeria para escolher uma imagem.');
+      showWarning({
+        description: 'Permita o acesso à galeria para escolher uma imagem.',
+        title: 'Permissão necessária',
+      });
       return;
     }
 
@@ -160,17 +171,23 @@ export default function AnimalAttachmentsScreen() {
       setAttachments((currentAttachments) => currentAttachments.filter((item) => item.uuid !== attachment.uuid));
       setSelectedAttachment(null);
     } catch (error: unknown) {
-      Alert.alert('Não foi possível remover o anexo', getAttachmentErrorMessage(error, 'Tente novamente.'));
+      showError({
+        description: getAttachmentErrorMessage(error, 'Tente novamente.'),
+        title: 'Não foi possível remover o anexo',
+      });
     } finally {
       setDeletingAttachmentUuid(null);
     }
   };
 
   const confirmDeleteAttachment = (attachment: Attachment) => {
-    Alert.alert('Remover anexo?', `"${getAttachmentName(attachment)}" será removido permanentemente.`, [
-      { style: 'cancel', text: 'Cancelar' },
-      { onPress: () => void deleteAttachment(attachment), style: 'destructive', text: 'Remover' },
-    ]);
+    confirm({
+      confirmLabel: 'Remover',
+      description: `"${getAttachmentName(attachment)}" será removido permanentemente.`,
+      destructive: true,
+      onConfirm: () => deleteAttachment(attachment),
+      title: 'Remover anexo?',
+    });
   };
 
   const openAttachment = async (attachment: Attachment) => {
@@ -179,7 +196,7 @@ export default function AnimalAttachmentsScreen() {
       if (!canOpen) throw new Error('URL indisponível');
       await Linking.openURL(attachment.url);
     } catch {
-      Alert.alert('Não foi possível abrir o anexo', 'Tente novamente mais tarde.');
+      showError({ description: 'Tente novamente mais tarde.', title: 'Não foi possível abrir o anexo' });
     }
   };
 

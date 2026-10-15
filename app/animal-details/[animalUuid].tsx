@@ -11,13 +11,14 @@ import {
   WarningCircleIcon,
 } from 'phosphor-react-native';
 import { useCallback, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Modal, Pressable, RefreshControl, ScrollView } from 'react-native';
+import { Image, Pressable, RefreshControl, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card, Text, XStack, YStack } from 'tamagui';
 import { AnimalProfilePhoto } from '../../src/components/animal-profile-photo';
 import { AnimalStageBadge } from '../../src/components/animal-stage-badge';
 import { useAppColors } from '../../src/components/main-layout';
 import { MedicineApplicationCalendar } from '../../src/components/medicine-application-calendar';
+import { useAppDialog } from '../../src/contexts/app-dialog-context';
 import { useAuth } from '../../src/contexts/auth-context';
 import { animalRoutes, routes } from '../../src/routes';
 import {
@@ -29,7 +30,7 @@ import {
 } from '../../src/services/animals';
 import { type Attachment, getAnimalAttachments } from '../../src/services/attachments';
 import { getMedicineApplicationsByAnimal, type MedicineApplication } from '../../src/services/medicine-applications';
-import { actionColors, effectColors, palette } from '../../src/theme';
+import { actionColors, palette } from '../../src/theme';
 import { getAttachmentName, isImageAttachment } from '../../src/utils/attachment';
 import { safeCapitalize, safeFormatAge, safeFormatBirthDate, safeFormatDate } from '../../src/utils/date';
 
@@ -164,10 +165,8 @@ function AnimalDetailsContent({
   onPhotoUpdated: (animal: Animal) => void;
 }) {
   const colors = useAppColors();
+  const { confirm, showError, showSuccess } = useAppDialog();
   const router = useRouter();
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [recentAttachments, setRecentAttachments] = useState<Attachment[]>([]);
   const [scheduledApplications, setScheduledApplications] = useState<MedicineApplication[]>([]);
   const [isAgendaLoading, setIsAgendaLoading] = useState(true);
@@ -209,25 +208,16 @@ function AnimalDetailsContent({
     }, [loadPreviewData]),
   );
 
-  const closeDeleteDialog = () => {
-    if (isDeleting) return;
-    setIsDeleteDialogOpen(false);
-    setDeleteError(null);
-  };
-
   const handleDelete = async () => {
-    setDeleteError(null);
-    setIsDeleting(true);
-
     try {
       await deleteAnimal(animal.uuid);
-      setIsDeleteDialogOpen(false);
-      Alert.alert('Animal excluído', `${animal.name} foi removido com sucesso.`);
+      showSuccess({ description: `${animal.name} foi removido com sucesso.`, title: 'Animal excluído' });
       router.dismissTo(routes.animals);
     } catch (error: unknown) {
-      setDeleteError(getAnimalErrorMessage(error, 'Não foi possível excluir o animal. Tente novamente.'));
-    } finally {
-      setIsDeleting(false);
+      showError({
+        description: getAnimalErrorMessage(error, 'Não foi possível excluir o animal. Tente novamente.'),
+        title: 'Não foi possível excluir o animal',
+      });
     }
   };
 
@@ -237,7 +227,10 @@ function AnimalDetailsContent({
     try {
       onPhotoUpdated(await updateAnimalPhoto(animal.uuid, photo));
     } catch (error: unknown) {
-      Alert.alert('Não foi possível atualizar a foto', getAnimalErrorMessage(error, 'Tente novamente.'));
+      showError({
+        description: getAnimalErrorMessage(error, 'Tente novamente.'),
+        title: 'Não foi possível atualizar a foto',
+      });
     } finally {
       setIsPhotoUploading(false);
     }
@@ -532,10 +525,15 @@ function AnimalDetailsContent({
           {/* Apagar */}
           <Pressable
             accessibilityLabel={`Excluir ${animal.name}`}
-            onPress={() => {
-              setDeleteError(null);
-              setIsDeleteDialogOpen(true);
-            }}
+            onPress={() =>
+              confirm({
+                confirmLabel: 'Excluir',
+                description: `${animal.name} será removido permanentemente. Esta ação não pode ser desfeita.`,
+                destructive: true,
+                onConfirm: handleDelete,
+                title: 'Excluir animal?',
+              })
+            }
             style={({ pressed }) => ({
               alignItems: 'center',
               backgroundColor: actionColors.destructive,
@@ -553,111 +551,6 @@ function AnimalDetailsContent({
             </XStack>
           </Pressable>
         </YStack>
-
-        {/* Delete Confirmation Modal */}
-        <Modal animationType='fade' onRequestClose={closeDeleteDialog} transparent visible={isDeleteDialogOpen}>
-          <YStack
-            flex={1}
-            items='center'
-            justify='center'
-            px='$5'
-            style={{ backgroundColor: effectColors.modalOverlay }}
-          >
-            <Card
-              borderWidth={1}
-              gap='$4'
-              maxWidth={420}
-              p='$5'
-              rounded='$5'
-              style={{ backgroundColor: colors.card, borderColor: colors.border }}
-              width='100%'
-            >
-              <YStack gap='$3' items='center'>
-                <XStack
-                  height={52}
-                  items='center'
-                  justify='center'
-                  rounded='$4'
-                  style={{ backgroundColor: `${colors.danger}16` }}
-                  width={52}
-                >
-                  <TrashIcon color={colors.danger} size={27} weight='fill' />
-                </XStack>
-                <YStack gap='$2'>
-                  <Text fontSize={20} fontWeight='800' style={{ color: colors.text, textAlign: 'center' }}>
-                    Excluir animal?
-                  </Text>
-                  <Text fontSize={14} lineHeight={20} style={{ color: colors.muted, textAlign: 'center' }}>
-                    {animal.name} será removido permanentemente. Esta ação não pode ser desfeita.
-                  </Text>
-                </YStack>
-              </YStack>
-
-              {deleteError ? (
-                <Card
-                  borderWidth={1}
-                  p='$3'
-                  rounded='$3'
-                  style={{ backgroundColor: `${colors.danger}12`, borderColor: colors.danger }}
-                >
-                  <XStack gap='$2' items='flex-start'>
-                    <WarningCircleIcon color={colors.danger} size={20} weight='fill' />
-                    <Text flex={1} fontSize={13} lineHeight={19} style={{ color: colors.danger }}>
-                      {deleteError}
-                    </Text>
-                  </XStack>
-                </Card>
-              ) : null}
-
-              <XStack gap='$3'>
-                <Pressable
-                  accessibilityLabel='Cancelar exclusão'
-                  disabled={isDeleting}
-                  onPress={closeDeleteDialog}
-                  style={({ pressed }) => ({
-                    alignItems: 'center',
-                    backgroundColor: colors.cardMuted,
-                    borderColor: colors.border,
-                    borderRadius: 13,
-                    borderWidth: 1,
-                    flex: 1,
-                    justifyContent: 'center',
-                    opacity: isDeleting ? 0.55 : pressed ? 0.72 : 1,
-                    paddingHorizontal: 12,
-                    paddingVertical: 13,
-                  })}
-                >
-                  <Text fontSize={14} fontWeight='700' style={{ color: colors.text }}>
-                    Cancelar
-                  </Text>
-                </Pressable>
-
-                <Pressable
-                  accessibilityLabel={`Confirmar exclusão de ${animal.name}`}
-                  disabled={isDeleting}
-                  onPress={() => void handleDelete()}
-                  style={({ pressed }) => ({
-                    alignItems: 'center',
-                    backgroundColor: colors.danger,
-                    borderRadius: 13,
-                    flex: 1,
-                    justifyContent: 'center',
-                    opacity: isDeleting ? 0.58 : pressed ? 0.78 : 1,
-                    paddingHorizontal: 12,
-                    paddingVertical: 13,
-                  })}
-                >
-                  <XStack gap='$2' items='center'>
-                    {isDeleting ? <ActivityIndicator color={palette.neutral0} size='small' /> : null}
-                    <Text fontSize={14} fontWeight='800' style={{ color: palette.neutral0 }}>
-                      {isDeleting ? 'Excluindo...' : 'Excluir'}
-                    </Text>
-                  </XStack>
-                </Pressable>
-              </XStack>
-            </Card>
-          </YStack>
-        </Modal>
 
         <Text fontSize={12} style={{ color: colors.muted, textAlign: 'center' }}>
           Cadastrado em {safeFormatDate(animal.createdAt)}

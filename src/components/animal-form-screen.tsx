@@ -1,9 +1,10 @@
 import { useRouter } from 'expo-router';
 import { WarningCircleIcon } from 'phosphor-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, ScrollView } from 'react-native';
+import { ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card, Text, XStack, YStack } from 'tamagui';
+import { useAppDialog } from '../contexts/app-dialog-context';
 import { routes } from '../routes';
 import {
   type AnimalFormFieldErrors,
@@ -42,6 +43,7 @@ export function AnimalFormScreen({ animalUuid }: AnimalFormScreenProps) {
   const isEdit = Boolean(animalUuid);
   const router = useRouter();
   const colors = useAppColors();
+  const { showSuccess } = useAppDialog();
   const scrollRef = useRef<ScrollView>(null);
   const [values, setValues] = useState<AnimalFormValues>(emptyAnimalFormValues);
   const [species, setSpecies] = useState<AnimalSpeciesOption[]>([]);
@@ -209,13 +211,13 @@ export function AnimalFormScreen({ animalUuid }: AnimalFormScreenProps) {
     try {
       if (animalUuid) {
         await updateAnimal(animalUuid, { ...input, status: data.status }, selectedPhoto ?? undefined);
-        Alert.alert('Animal atualizado', 'As alterações foram salvas com sucesso.');
+        showSuccess({ description: 'As alterações foram salvas com sucesso.', title: 'Animal atualizado' });
         router.back();
         return;
       }
 
       await createAnimal(input, selectedPhoto ?? undefined);
-      Alert.alert('Animal cadastrado', 'O novo animal foi cadastrado com sucesso.');
+      showSuccess({ description: 'O novo animal foi cadastrado com sucesso.', title: 'Animal cadastrado' });
       router.replace(routes.animals);
     } catch (error: unknown) {
       const fallback = isEdit
