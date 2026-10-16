@@ -10,7 +10,7 @@ import {
 } from 'phosphor-react-native';
 import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Modal, Pressable, RefreshControl, TextInput } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card, Text, XStack, YStack } from 'tamagui';
 
 import { InputField } from '../src/components/form/fields';
@@ -290,6 +290,7 @@ function BrandFormModal({ brand, isOpen, onClose, onSaved }: BrandFormModalProps
 
 function MedicineBrandsList() {
   const colors = useAppColors();
+  const insets = useSafeAreaInsets();
   const [brands, setBrands] = useState<MedicineBrand[]>([]);
   const [meta, setMeta] = useState<PaginatedMeta | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -375,9 +376,11 @@ function MedicineBrandsList() {
   const showErrorState = hasError && brands.length === 0;
   const showEmptyState = !isLoading && !showErrorState && brands.length === 0;
   const totalCount = meta?.totalItems ?? brands.length;
+  const floatingActionBottom = insets.bottom + 20;
+  const listBottomPadding = floatingActionBottom + 72;
 
   return (
-    <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ backgroundColor: colors.background, flex: 1 }}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={{ backgroundColor: colors.background, flex: 1 }}>
       <ScreenHeader description='Marcas dos medicamentos' title='Marcas' />
       <YStack flex={1}>
         <YStack gap='$3' pt='$3' pb='$3' px='$5'>
@@ -425,7 +428,7 @@ function MedicineBrandsList() {
           <BrandsError onRetry={() => void loadBrands(activeSearch)} />
         ) : (
           <FlatList
-            contentContainerStyle={{ flexGrow: 1, gap: 12, paddingBottom: 96, paddingHorizontal: 20 }}
+            contentContainerStyle={{ flexGrow: 1, gap: 12, paddingBottom: listBottomPadding, paddingHorizontal: 20 }}
             data={brands}
             keyboardShouldPersistTaps='handled'
             keyExtractor={(brand) => brand.uuid}
@@ -459,7 +462,7 @@ function MedicineBrandsList() {
           style={({ pressed }) => ({
             backgroundColor: colors.primary,
             borderRadius: 28,
-            bottom: 20,
+            bottom: floatingActionBottom,
             elevation: 6,
             opacity: pressed ? 0.85 : 1,
             paddingHorizontal: 18,

@@ -118,7 +118,7 @@ export function AppDialogProvider({ children }: PropsWithChildren) {
                   </YStack>
                 </XStack>
 
-                <XStack gap='$3' justify='flex-end'>
+                <XStack gap='$3' justify='flex-end' style={{ flexWrap: 'wrap' }}>
                   {isConfirmation ? (
                     <Pressable
                       accessibilityLabel={dialog.cancelLabel ?? 'Cancelar'}
@@ -129,12 +129,13 @@ export function AppDialogProvider({ children }: PropsWithChildren) {
                         borderColor: colors.border,
                         borderRadius: 12,
                         borderWidth: 1,
+                        maxWidth: '100%',
                         opacity: pressed ? 0.72 : 1,
                         paddingHorizontal: 16,
                         paddingVertical: 12,
                       })}
                     >
-                      <Text fontWeight='800' style={{ color: colors.text }}>
+                      <Text fontWeight='800' numberOfLines={2} style={{ color: colors.text, textAlign: 'center' }}>
                         {dialog.cancelLabel ?? 'Cancelar'}
                       </Text>
                     </Pressable>
@@ -146,12 +147,13 @@ export function AppDialogProvider({ children }: PropsWithChildren) {
                       alignItems: 'center',
                       backgroundColor: dialog.destructive ? colors.danger : colors.primary,
                       borderRadius: 12,
+                      maxWidth: '100%',
                       opacity: pressed ? 0.72 : 1,
                       paddingHorizontal: 18,
                       paddingVertical: 12,
                     })}
                   >
-                    <Text fontWeight='800' style={{ color: palette.neutral0 }}>
+                    <Text fontWeight='800' numberOfLines={2} style={{ color: palette.neutral0, textAlign: 'center' }}>
                       {confirmLabel}
                     </Text>
                   </Pressable>

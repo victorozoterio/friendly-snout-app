@@ -11,7 +11,7 @@ import {
 } from 'phosphor-react-native';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, RefreshControl, SectionList } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card, Text, XStack, YStack } from 'tamagui';
 
 import { useAppColors } from '../../src/components/main-layout';
@@ -136,7 +136,7 @@ function ApplicationCard({
             <XStack gap='$2' items='center'>
               <XCircleIcon color={colors.danger} size={19} weight='bold' />
               <Text fontSize={14} fontWeight='700' style={{ color: colors.danger }}>
-                {isRecurring ? 'Cancelar série' : 'Cancelar agendamento'}
+                {isRecurring ? 'Cancelar série' : 'Cancelar'}
               </Text>
             </XStack>
           </Pressable>
@@ -196,6 +196,7 @@ function ApplicationsLoadError({ message, onRetry }: { message: string; onRetry:
 function AnimalMedicineApplications({ animalUuid }: { animalUuid: string }) {
   const router = useRouter();
   const colors = useAppColors();
+  const insets = useSafeAreaInsets();
   const [animalName, setAnimalName] = useState('animal');
   const [applications, setApplications] = useState<MedicineApplication[]>([]);
   const [meta, setMeta] = useState<MedicineApplicationsMeta | null>(null);
@@ -313,9 +314,11 @@ function AnimalMedicineApplications({ animalUuid }: { animalUuid: string }) {
   ).length;
   const historyCount = applications.filter((application) => !application.nextApplicationAt).length;
   const showBlockingError = Boolean(error && applications.length === 0);
+  const floatingActionBottom = insets.bottom + 20;
+  const listBottomPadding = floatingActionBottom + 72;
 
   return (
-    <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ backgroundColor: colors.background, flex: 1 }}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={{ backgroundColor: colors.background, flex: 1 }}>
       <ScreenHeader description={`Aplicações de ${animalName}`} title='Agenda de medicamentos' />
       {isLoading ? (
         <YStack flex={1} gap='$3' items='center' justify='center'>
@@ -326,7 +329,7 @@ function AnimalMedicineApplications({ animalUuid }: { animalUuid: string }) {
         <ApplicationsLoadError message={error ?? ''} onRetry={() => void loadApplications()} />
       ) : (
         <SectionList
-          contentContainerStyle={{ flexGrow: 1, paddingBottom: 100, paddingHorizontal: 20 }}
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: listBottomPadding, paddingHorizontal: 20 }}
           ItemSeparatorComponent={() => <YStack height={10} />}
           keyExtractor={(application) => application.uuid}
           ListEmptyComponent={<EmptyApplications />}
@@ -422,7 +425,7 @@ function AnimalMedicineApplications({ animalUuid }: { animalUuid: string }) {
           style={({ pressed }) => ({
             backgroundColor: colors.primary,
             borderRadius: 28,
-            bottom: 20,
+            bottom: floatingActionBottom,
             elevation: 6,
             opacity: pressed ? 0.85 : 1,
             paddingHorizontal: 18,
@@ -537,7 +540,7 @@ function AnimalMedicineApplications({ animalUuid }: { animalUuid: string }) {
                 <XStack gap='$2' items='center'>
                   {isCancelling ? <ActivityIndicator color={palette.neutral0} size='small' /> : null}
                   <Text fontSize={14} fontWeight='800' style={{ color: palette.neutral0 }}>
-                    {isCancelling ? 'Cancelando...' : 'Cancelar agendamento'}
+                    {isCancelling ? 'Cancelando...' : 'Cancelar'}
                   </Text>
                 </XStack>
               </Pressable>
