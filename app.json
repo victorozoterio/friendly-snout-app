@@ -6,9 +6,18 @@
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "scheme": "friendlysnoutapp",
-    "plugins": ["expo-router", "@react-native-community/datetimepicker", "expo-media-library"],
+    "plugins": ["expo-router", "@react-native-community/datetimepicker", "expo-media-library", "expo-notifications"],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "bcba8c12-d18b-4349-a59f-10ee43e60066"
+      }
+    },
+    "android": {
+      "package": "com.victorozoterio.friendlysnoutapp"
     }
   }
 }
