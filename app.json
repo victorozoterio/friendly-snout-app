@@ -1,11 +1,12 @@
 {
   "expo": {
-    "name": "friendly-snout-app",
+    "name": "Focinho Amigo",
     "slug": "friendly-snout-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "scheme": "friendlysnoutapp",
+    "icon": "./assets/icon.png",
     "plugins": ["expo-router", "@react-native-community/datetimepicker", "expo-media-library", "expo-notifications"],
     "experiments": {
       "typedRoutes": true
@@ -18,7 +19,11 @@
     },
     "android": {
       "package": "com.victorozoterio.friendlysnoutapp",
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "./google-services.json",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon-adaptive.png",
+        "backgroundColor": "#FFFFFF"
+      }
     }
   }
 }
