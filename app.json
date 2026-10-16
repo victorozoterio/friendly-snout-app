@@ -17,7 +17,8 @@
       }
     },
     "android": {
-      "package": "com.victorozoterio.friendlysnoutapp"
+      "package": "com.victorozoterio.friendlysnoutapp",
+      "googleServicesFile": "./google-services.json"
     }
   }
 }

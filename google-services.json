@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "447217521674",
+    "project_id": "focinho-amigo-9e1db",
+    "storage_bucket": "focinho-amigo-9e1db.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:447217521674:android:7e5dcc0cf720c465133bf3",
+        "android_client_info": {
+          "package_name": "com.victorozoterio.friendlysnoutapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB4Ek-BqMjj4sQEaIL3UBclrlWFZZihxsk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
