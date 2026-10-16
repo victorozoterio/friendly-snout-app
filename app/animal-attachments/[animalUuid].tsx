@@ -14,7 +14,7 @@ import {
 } from 'phosphor-react-native';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Image, Linking, Modal, Pressable, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card, Text, XStack, YStack } from 'tamagui';
 
 import { useAppColors } from '../../src/components/main-layout';
@@ -74,6 +74,7 @@ export default function AnimalAttachmentsScreen() {
   const { animalUuid } = useLocalSearchParams<{ animalUuid: string }>();
   const { status } = useAuth();
   const colors = useAppColors();
+  const insets = useSafeAreaInsets();
   const { confirm, showError, showSuccess, showWarning } = useAppDialog();
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -377,126 +378,135 @@ export default function AnimalAttachmentsScreen() {
             gap='$4'
             p='$5'
             rounded='$6'
-            style={{ backgroundColor: colors.card, borderColor: colors.border }}
+            style={{
+              backgroundColor: colors.card,
+              borderColor: colors.border,
+              maxHeight: '88%',
+              paddingBottom: insets.bottom + 20,
+            }}
           >
-            <XStack items='center' justify='space-between'>
-              <Text fontSize={18} fontWeight='800' style={{ color: colors.text }}>
-                Adicionar anexo
-              </Text>
-              <Pressable accessibilityLabel='Fechar opções de anexos' onPress={() => setIsSourceModalOpen(false)}>
-                <X color={colors.muted} size={24} />
-              </Pressable>
-            </XStack>
-            <Text fontSize={14} style={{ color: colors.muted }}>
-              Escolha de onde deseja enviar o anexo.
-            </Text>
-            <YStack gap='$3'>
-              <Pressable
-                accessibilityLabel='Câmera'
-                disabled={isUploading}
-                onPress={() => void takePhoto()}
-                style={({ pressed }) => ({
-                  alignItems: 'center',
-                  backgroundColor: colors.cardMuted,
-                  borderColor: colors.border,
-                  borderRadius: 14,
-                  borderWidth: 1,
-                  flexDirection: 'row',
-                  gap: 12,
-                  opacity: isUploading ? 0.55 : pressed ? 0.76 : 1,
-                  padding: 16,
-                })}
-              >
-                <XStack
-                  height={44}
-                  items='center'
-                  justify='center'
-                  rounded='$3'
-                  style={{ backgroundColor: `${colors.primary}20` }}
-                  width={44}
-                >
-                  <Camera color={colors.primary} size={24} weight='fill' />
+            <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator>
+              <YStack gap='$4'>
+                <XStack items='center' justify='space-between'>
+                  <Text fontSize={18} fontWeight='800' style={{ color: colors.text }}>
+                    Adicionar anexo
+                  </Text>
+                  <Pressable accessibilityLabel='Fechar opções de anexos' onPress={() => setIsSourceModalOpen(false)}>
+                    <X color={colors.muted} size={24} />
+                  </Pressable>
                 </XStack>
-                <YStack flex={1}>
-                  <Text fontSize={15} fontWeight='700' style={{ color: colors.text }}>
-                    Câmera
-                  </Text>
-                  <Text fontSize={12} style={{ color: colors.muted }}>
-                    Usar a câmera do dispositivo
-                  </Text>
+                <Text fontSize={14} style={{ color: colors.muted }}>
+                  Escolha de onde deseja enviar o anexo.
+                </Text>
+                <YStack gap='$3'>
+                  <Pressable
+                    accessibilityLabel='Câmera'
+                    disabled={isUploading}
+                    onPress={() => void takePhoto()}
+                    style={({ pressed }) => ({
+                      alignItems: 'center',
+                      backgroundColor: colors.cardMuted,
+                      borderColor: colors.border,
+                      borderRadius: 14,
+                      borderWidth: 1,
+                      flexDirection: 'row',
+                      gap: 12,
+                      opacity: isUploading ? 0.55 : pressed ? 0.76 : 1,
+                      padding: 16,
+                    })}
+                  >
+                    <XStack
+                      height={44}
+                      items='center'
+                      justify='center'
+                      rounded='$3'
+                      style={{ backgroundColor: `${colors.primary}20` }}
+                      width={44}
+                    >
+                      <Camera color={colors.primary} size={24} weight='fill' />
+                    </XStack>
+                    <YStack flex={1}>
+                      <Text fontSize={15} fontWeight='700' style={{ color: colors.text }}>
+                        Câmera
+                      </Text>
+                      <Text fontSize={12} style={{ color: colors.muted }}>
+                        Usar a câmera do dispositivo
+                      </Text>
+                    </YStack>
+                  </Pressable>
+                  <Pressable
+                    accessibilityLabel='Escolher uma imagem da galeria'
+                    disabled={isUploading}
+                    onPress={() => void pickFromGallery()}
+                    style={({ pressed }) => ({
+                      alignItems: 'center',
+                      backgroundColor: colors.cardMuted,
+                      borderColor: colors.border,
+                      borderRadius: 14,
+                      borderWidth: 1,
+                      flexDirection: 'row',
+                      gap: 12,
+                      opacity: isUploading ? 0.55 : pressed ? 0.76 : 1,
+                      padding: 16,
+                    })}
+                  >
+                    <XStack
+                      height={44}
+                      items='center'
+                      justify='center'
+                      rounded='$3'
+                      style={{ backgroundColor: `${colors.primary}20` }}
+                      width={44}
+                    >
+                      <ImageIcon color={colors.primary} size={24} weight='fill' />
+                    </XStack>
+                    <YStack flex={1}>
+                      <Text fontSize={15} fontWeight='700' style={{ color: colors.text }}>
+                        Galeria
+                      </Text>
+                      <Text fontSize={12} style={{ color: colors.muted }}>
+                        Escolher uma imagem do dispositivo
+                      </Text>
+                    </YStack>
+                  </Pressable>
+                  <Pressable
+                    accessibilityLabel='Escolher um arquivo'
+                    disabled={isUploading}
+                    onPress={() => void pickFromFiles()}
+                    style={({ pressed }) => ({
+                      alignItems: 'center',
+                      backgroundColor: colors.cardMuted,
+                      borderColor: colors.border,
+                      borderRadius: 14,
+                      borderWidth: 1,
+                      flexDirection: 'row',
+                      gap: 12,
+                      opacity: isUploading ? 0.55 : pressed ? 0.76 : 1,
+                      padding: 16,
+                    })}
+                  >
+                    <XStack
+                      height={44}
+                      items='center'
+                      justify='center'
+                      rounded='$3'
+                      style={{ backgroundColor: `${colors.primary}20` }}
+                      width={44}
+                    >
+                      <FileIcon color={colors.primary} size={24} weight='fill' />
+                    </XStack>
+                    <YStack flex={1}>
+                      <Text fontSize={15} fontWeight='700' style={{ color: colors.text }}>
+                        Arquivos
+                      </Text>
+                      <Text fontSize={12} style={{ color: colors.muted }}>
+                        Enviar imagem ou PDF de até 10 MB
+                      </Text>
+                    </YStack>
+                  </Pressable>
                 </YStack>
-              </Pressable>
-              <Pressable
-                accessibilityLabel='Escolher uma imagem da galeria'
-                disabled={isUploading}
-                onPress={() => void pickFromGallery()}
-                style={({ pressed }) => ({
-                  alignItems: 'center',
-                  backgroundColor: colors.cardMuted,
-                  borderColor: colors.border,
-                  borderRadius: 14,
-                  borderWidth: 1,
-                  flexDirection: 'row',
-                  gap: 12,
-                  opacity: isUploading ? 0.55 : pressed ? 0.76 : 1,
-                  padding: 16,
-                })}
-              >
-                <XStack
-                  height={44}
-                  items='center'
-                  justify='center'
-                  rounded='$3'
-                  style={{ backgroundColor: `${colors.primary}20` }}
-                  width={44}
-                >
-                  <ImageIcon color={colors.primary} size={24} weight='fill' />
-                </XStack>
-                <YStack flex={1}>
-                  <Text fontSize={15} fontWeight='700' style={{ color: colors.text }}>
-                    Galeria
-                  </Text>
-                  <Text fontSize={12} style={{ color: colors.muted }}>
-                    Escolher uma imagem do dispositivo
-                  </Text>
-                </YStack>
-              </Pressable>
-              <Pressable
-                accessibilityLabel='Escolher um arquivo'
-                disabled={isUploading}
-                onPress={() => void pickFromFiles()}
-                style={({ pressed }) => ({
-                  alignItems: 'center',
-                  backgroundColor: colors.cardMuted,
-                  borderColor: colors.border,
-                  borderRadius: 14,
-                  borderWidth: 1,
-                  flexDirection: 'row',
-                  gap: 12,
-                  opacity: isUploading ? 0.55 : pressed ? 0.76 : 1,
-                  padding: 16,
-                })}
-              >
-                <XStack
-                  height={44}
-                  items='center'
-                  justify='center'
-                  rounded='$3'
-                  style={{ backgroundColor: `${colors.primary}20` }}
-                  width={44}
-                >
-                  <FileIcon color={colors.primary} size={24} weight='fill' />
-                </XStack>
-                <YStack flex={1}>
-                  <Text fontSize={15} fontWeight='700' style={{ color: colors.text }}>
-                    Arquivos
-                  </Text>
-                  <Text fontSize={12} style={{ color: colors.muted }}>
-                    Enviar imagem ou PDF de até 10 MB
-                  </Text>
-                </YStack>
-              </Pressable>
-            </YStack>
+              </YStack>
+            </ScrollView>
           </Card>
         </YStack>
       </Modal>
