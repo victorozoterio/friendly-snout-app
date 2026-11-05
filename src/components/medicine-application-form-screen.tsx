@@ -37,7 +37,10 @@ const kindOptions: { label: string; value: MedicineApplicationKind }[] = [
   { label: 'Já realizada', value: 'realized' },
 ];
 
-const frequencyOptions: { label: string; value: MedicineApplicationFrequency }[] = [
+const frequencyOptions: {
+  label: string;
+  value: MedicineApplicationFrequency;
+}[] = [
   { label: 'Não se repete', value: 'não se repete' },
   { label: 'Diário', value: 'diário' },
   { label: 'Dias úteis', value: 'todos os dias da semana' },
@@ -115,7 +118,11 @@ export function MedicineApplicationFormScreen({ animalUuid }: MedicineApplicatio
   }, [animalUuid, reloadKey]);
 
   const medicineOptions = useMemo(
-    () => medicines.map((medicine) => ({ label: getMedicineOptionLabel(medicine), value: medicine.uuid })),
+    () =>
+      medicines.map((medicine) => ({
+        label: getMedicineOptionLabel(medicine),
+        value: medicine.uuid,
+      })),
     [medicines],
   );
   const selectedMedicine = medicines.find((medicine) => medicine.uuid === values.medicineUuid);
@@ -136,7 +143,13 @@ export function MedicineApplicationFormScreen({ animalUuid }: MedicineApplicatio
     value: MedicineApplicationFormValues[K],
   ) => {
     setValues((current) => ({ ...current, [field]: value }));
-    setFieldErrors((current) => ({ ...current, [field]: undefined }));
+    setFieldErrors((current) => {
+      if (field === 'date' || field === 'time') {
+        return { ...current, date: undefined, time: undefined };
+      }
+
+      return { ...current, [field]: undefined };
+    });
     setApiError(null);
   };
 
@@ -177,7 +190,9 @@ export function MedicineApplicationFormScreen({ animalUuid }: MedicineApplicatio
 
     if (!applicationDate) return;
     if (medicine && medicine.quantity !== -1 && quantity > medicine.quantity) {
-      setFieldErrors({ quantity: `Há somente ${medicine.quantity} unidade(s) disponível(is) em estoque` });
+      setFieldErrors({
+        quantity: `Há somente ${medicine.quantity} unidade(s) disponível(is) em estoque`,
+      });
       return;
     }
 
@@ -243,7 +258,10 @@ export function MedicineApplicationFormScreen({ animalUuid }: MedicineApplicatio
                 borderWidth={1}
                 p='$3'
                 rounded='$4'
-                style={{ backgroundColor: `${colors.danger}14`, borderColor: colors.danger }}
+                style={{
+                  backgroundColor: `${colors.danger}14`,
+                  borderColor: colors.danger,
+                }}
               >
                 <XStack gap='$2' items='flex-start'>
                   <WarningCircleIcon color={colors.danger} size={21} weight='fill' />
@@ -259,7 +277,10 @@ export function MedicineApplicationFormScreen({ animalUuid }: MedicineApplicatio
               gap='$4'
               p='$4'
               rounded='$4'
-              style={{ backgroundColor: colors.cardMuted, borderColor: colors.border }}
+              style={{
+                backgroundColor: colors.cardMuted,
+                borderColor: colors.border,
+              }}
             >
               <ChoiceField
                 label='Tipo de registro'
