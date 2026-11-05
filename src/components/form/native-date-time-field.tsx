@@ -18,6 +18,7 @@ type NativeDateTimeFieldProps = {
   onChange: (value: Date) => void;
   onTextChange: (value: string) => void;
   required?: boolean;
+  showErrorMessage?: boolean;
   textValue: string;
   value: Date;
 };
@@ -31,6 +32,7 @@ export function NativeDateTimeField({
   onChange,
   onTextChange,
   required = false,
+  showErrorMessage = true,
   textValue,
   value,
 }: NativeDateTimeFieldProps) {
@@ -50,6 +52,7 @@ export function NativeDateTimeField({
         onChangeText={onTextChange}
         placeholder={mode === 'date' ? 'DD/MM/AAAA' : 'HH:mm'}
         required={required}
+        showErrorMessage={showErrorMessage}
         value={textValue}
       />
     );
@@ -105,7 +108,7 @@ export function NativeDateTimeField({
         </Text>
         <Icon color={colors.primary} size={21} weight='bold' />
       </Pressable>
-      <FormErrorInline message={error} />
+      {showErrorMessage ? <FormErrorInline message={error} /> : null}
 
       {Platform.OS === 'ios' ? (
         <Modal animationType='fade' onRequestClose={closePicker} transparent visible={isPickerVisible}>

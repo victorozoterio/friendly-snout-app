@@ -315,7 +315,11 @@ export function MedicineApplicationCalendar({ applications, hasError, isLoading 
             <YStack gap='$2'>
               {selectedApplications.slice(0, 2).map((occurrence) => (
                 <XStack gap='$2' items='center' key={`${occurrence.application.uuid}-${toDateKey(occurrence.date)}`}>
-                  <ClockIcon color={colors.primary} size={18} weight='fill' />
+                  <ClockIcon
+                    color={occurrence.date.getTime() < Date.now() ? colors.danger : colors.primary}
+                    size={18}
+                    weight='fill'
+                  />
                   <YStack flex={1}>
                     <Text fontSize={13} fontWeight='700' numberOfLines={1} style={{ color: colors.text }}>
                       {occurrence.application.medicine?.name ?? 'Medicamento'}

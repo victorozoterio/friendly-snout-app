@@ -19,12 +19,14 @@ import {
   maskApplicationTime,
   medicineApplicationFormSchema,
   parseApplicationDateTime,
+  scheduledApplicationFutureError,
 } from '../services/medicine-applications';
 import { getMedicines, type Medicine } from '../services/medicines';
 import { palette } from '../theme';
 import { ChoiceField, InputField } from './form/fields';
 import { NativeDateTimeField } from './form/native-date-time-field';
 import { LoadError, LoadingState } from './form/states';
+import { FormErrorInline } from './form-error-inline';
 import { useAppColors } from './main-layout';
 import { ScreenHeader } from './screen-header';
 
@@ -122,6 +124,10 @@ export function MedicineApplicationFormScreen({ animalUuid }: MedicineApplicatio
   const pickerValue = parseApplicationDateTime(values.date, values.time) ?? new Date();
   const endPickerValue = parseApplicationDateTime(values.endDate, values.time) ?? pickerValue;
   const isRecurring = values.kind === 'scheduled' && values.frequency !== 'não se repete';
+  const dateTimeError =
+    fieldErrors.date === scheduledApplicationFutureError && fieldErrors.time === scheduledApplicationFutureError
+      ? scheduledApplicationFutureError
+      : undefined;
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
   const todayEnd = new Date();
@@ -309,40 +315,45 @@ export function MedicineApplicationFormScreen({ animalUuid }: MedicineApplicatio
                 />
               ) : null}
 
-              <XStack gap='$3'>
-                <YStack flex={1}>
-                  <NativeDateTimeField
-                    error={fieldErrors.date}
-                    label={
-                      values.kind === 'realized'
-                        ? 'Data da aplicação'
-                        : isRecurring
-                          ? 'Data de início'
-                          : 'Data agendada'
-                    }
-                    maximumDate={values.kind === 'realized' ? todayEnd : undefined}
-                    minimumDate={values.kind === 'scheduled' ? todayStart : undefined}
-                    mode='date'
-                    onChange={(value) => changeField('date', formatPickerDate(value))}
-                    onTextChange={(value) => changeField('date', maskApplicationDate(value))}
-                    required
-                    textValue={values.date}
-                    value={pickerValue}
-                  />
-                </YStack>
-                <YStack flex={0.72}>
-                  <NativeDateTimeField
-                    error={fieldErrors.time}
-                    label='Horário'
-                    mode='time'
-                    onChange={(value) => changeField('time', formatPickerTime(value))}
-                    onTextChange={(value) => changeField('time', maskApplicationTime(value))}
-                    required
-                    textValue={values.time}
-                    value={pickerValue}
-                  />
-                </YStack>
-              </XStack>
+              <YStack gap='$1'>
+                <XStack gap='$3'>
+                  <YStack flex={1}>
+                    <NativeDateTimeField
+                      error={fieldErrors.date}
+                      label={
+                        values.kind === 'realized'
+                          ? 'Data da aplicação'
+                          : isRecurring
+                            ? 'Data de início'
+                            : 'Data agendada'
+                      }
+                      maximumDate={values.kind === 'realized' ? todayEnd : undefined}
+                      minimumDate={values.kind === 'scheduled' ? todayStart : undefined}
+                      mode='date'
+                      onChange={(value) => changeField('date', formatPickerDate(value))}
+                      onTextChange={(value) => changeField('date', maskApplicationDate(value))}
+                      required
+                      showErrorMessage={!dateTimeError}
+                      textValue={values.date}
+                      value={pickerValue}
+                    />
+                  </YStack>
+                  <YStack flex={0.72}>
+                    <NativeDateTimeField
+                      error={fieldErrors.time}
+                      label='Horário'
+                      mode='time'
+                      onChange={(value) => changeField('time', formatPickerTime(value))}
+                      onTextChange={(value) => changeField('time', maskApplicationTime(value))}
+                      required
+                      showErrorMessage={!dateTimeError}
+                      textValue={values.time}
+                      value={pickerValue}
+                    />
+                  </YStack>
+                </XStack>
+                <FormErrorInline message={dateTimeError} />
+              </YStack>
 
               {isRecurring ? (
                 <YStack gap='$2'>

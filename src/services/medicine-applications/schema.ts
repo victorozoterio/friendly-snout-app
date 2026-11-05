@@ -2,6 +2,8 @@ import { z } from 'zod';
 
 import { parseApplicationDateTime } from './date';
 
+export const scheduledApplicationFutureError = 'O agendamento deve estar no futuro';
+
 export const medicineApplicationFormSchema = z
   .object({
     kind: z.enum(['realized', 'scheduled']),
@@ -46,7 +48,8 @@ export const medicineApplicationFormSchema = z
 
     const now = Date.now();
     if (values.kind === 'scheduled' && dateTime.getTime() <= now) {
-      context.addIssue({ code: 'custom', message: 'O agendamento deve estar no futuro', path: ['date'] });
+      context.addIssue({ code: 'custom', message: scheduledApplicationFutureError, path: ['date'] });
+      context.addIssue({ code: 'custom', message: scheduledApplicationFutureError, path: ['time'] });
     }
 
     if (isRecurring && endDateTime && endDateTime.getTime() < dateTime.getTime()) {

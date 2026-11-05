@@ -9,9 +9,9 @@ type FormErrorInlineProps = {
 
 export function FormErrorInline({ message }: FormErrorInlineProps) {
   return (
-    <XStack aria-hidden={!message} gap='$1' height={18} items='center' opacity={message ? 1 : 0}>
+    <XStack aria-hidden={!message} gap='$1' items='flex-start' opacity={message ? 1 : 0} style={{ minHeight: 18 }}>
       <XCircleIcon color={colors.error} size={16} weight='duotone' />
-      <Text color='$error' fontSize={14}>
+      <Text flex={1} color='$error' fontSize={14} lineHeight={18}>
         {message ?? ' '}
       </Text>
     </XStack>

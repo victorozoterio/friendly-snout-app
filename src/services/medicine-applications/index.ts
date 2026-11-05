@@ -6,7 +6,7 @@ export {
   type MedicineApplicationFormValues,
   type MedicineApplicationKind,
 } from './form.types';
-export { medicineApplicationFormSchema } from './schema';
+export { medicineApplicationFormSchema, scheduledApplicationFutureError } from './schema';
 export { createMedicineApplication, deleteMedicineApplication, getMedicineApplicationsByAnimal } from './service';
 export type {
   CreateMedicineApplicationInput,

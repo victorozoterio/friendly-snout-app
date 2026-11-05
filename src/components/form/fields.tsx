@@ -30,6 +30,7 @@ type InputFieldProps = {
   onChangeText: (value: string) => void;
   placeholder?: string;
   required?: boolean;
+  showErrorMessage?: boolean;
   value: string;
 };
 
@@ -42,6 +43,7 @@ export function InputField({
   onChangeText,
   placeholder,
   required = false,
+  showErrorMessage = true,
   value,
 }: InputFieldProps) {
   const appColors = useAppColors();
@@ -71,7 +73,7 @@ export function InputField({
         }}
         value={value}
       />
-      <FormErrorInline message={error} />
+      {showErrorMessage ? <FormErrorInline message={error} /> : null}
     </YStack>
   );
 }
