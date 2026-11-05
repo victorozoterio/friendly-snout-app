@@ -5,6 +5,7 @@ import {
   PencilSimpleIcon,
   PlusIcon,
   TagIcon,
+  TrashIcon,
   WarningCircleIcon,
   XCircleIcon,
 } from 'phosphor-react-native';
@@ -16,10 +17,12 @@ import { Card, Text, XStack, YStack } from 'tamagui';
 import { InputField } from '../src/components/form/fields';
 import { useAppColors } from '../src/components/main-layout';
 import { ScreenHeader } from '../src/components/screen-header';
+import { useAppDialog } from '../src/contexts/app-dialog-context';
 import { useAuth } from '../src/contexts/auth-context';
 import { routes } from '../src/routes';
 import {
   createMedicineBrand,
+  deleteMedicineBrand,
   getMedicineBrandErrorMessage,
   getMedicineBrands,
   type MedicineBrand,
@@ -35,7 +38,7 @@ type BrandModalState = {
   isOpen: boolean;
 };
 
-function BrandCard({ brand, onEdit }: { brand: MedicineBrand; onEdit: () => void }) {
+function BrandCard({ brand, onDelete, onEdit }: { brand: MedicineBrand; onDelete: () => void; onEdit: () => void }) {
   const colors = useAppColors();
 
   return (
@@ -75,6 +78,23 @@ function BrandCard({ brand, onEdit }: { brand: MedicineBrand; onEdit: () => void
           })}
         >
           <PencilSimpleIcon color={colors.primary} size={19} weight='bold' />
+        </Pressable>
+        <Pressable
+          accessibilityLabel={`Excluir marca ${brand.name}`}
+          onPress={onDelete}
+          style={({ pressed }) => ({
+            alignItems: 'center',
+            backgroundColor: `${colors.danger}16`,
+            borderColor: `${colors.danger}55`,
+            borderRadius: 12,
+            borderWidth: 1,
+            height: 40,
+            justifyContent: 'center',
+            opacity: pressed ? 0.72 : 1,
+            width: 40,
+          })}
+        >
+          <TrashIcon color={colors.danger} size={19} weight='bold' />
         </Pressable>
       </XStack>
     </Card>
@@ -291,6 +311,7 @@ function BrandFormModal({ brand, isOpen, onClose, onSaved }: BrandFormModalProps
 function MedicineBrandsList() {
   const colors = useAppColors();
   const insets = useSafeAreaInsets();
+  const { confirm, showError, showSuccess } = useAppDialog();
   const [brands, setBrands] = useState<MedicineBrand[]>([]);
   const [meta, setMeta] = useState<PaginatedMeta | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -372,6 +393,28 @@ function MedicineBrandsList() {
     setActiveSearch('');
   };
 
+  const handleDeleteBrand = (brand: MedicineBrand) => {
+    confirm({
+      cancelLabel: 'Cancelar',
+      confirmLabel: 'Excluir',
+      description: `A marca “${brand.name}” será excluída permanentemente.`,
+      destructive: true,
+      onConfirm: async () => {
+        try {
+          await deleteMedicineBrand(brand.uuid);
+          await loadBrands(activeSearch, true);
+          showSuccess({ description: `${brand.name} foi excluída com sucesso.`, title: 'Marca excluída' });
+        } catch (error: unknown) {
+          showError({
+            description: getMedicineBrandErrorMessage(error, 'Não foi possível excluir a marca. Tente novamente.'),
+            title: 'Não foi possível excluir a marca',
+          });
+        }
+      },
+      title: 'Excluir marca?',
+    });
+  };
+
   const hasActiveSearch = activeSearch.length > 0;
   const showErrorState = hasError && brands.length === 0;
   const showEmptyState = !isLoading && !showErrorState && brands.length === 0;
@@ -451,7 +494,11 @@ function MedicineBrandsList() {
               />
             }
             renderItem={({ item }) => (
-              <BrandCard brand={item} onEdit={() => setModalState({ brand: item, isOpen: true })} />
+              <BrandCard
+                brand={item}
+                onDelete={() => handleDeleteBrand(item)}
+                onEdit={() => setModalState({ brand: item, isOpen: true })}
+              />
             )}
           />
         )}

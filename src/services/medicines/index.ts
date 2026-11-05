@@ -4,6 +4,8 @@ export { medicineBrandFormSchema, medicineFormSchema } from './schema';
 export {
   createMedicine,
   createMedicineBrand,
+  deleteMedicine,
+  deleteMedicineBrand,
   getMedicine,
   getMedicineBrands,
   getMedicines,

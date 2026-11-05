@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { WarningCircleIcon } from 'phosphor-react-native';
+import { TrashIcon, WarningCircleIcon } from 'phosphor-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,6 +8,7 @@ import { useAppDialog } from '../contexts/app-dialog-context';
 import { routes } from '../routes';
 import {
   createMedicine,
+  deleteMedicine,
   emptyMedicineFormValues,
   getMedicine,
   getMedicineBrands,
@@ -58,7 +59,7 @@ export function MedicineFormScreen({ medicineUuid }: MedicineFormScreenProps) {
   const isEdit = Boolean(medicineUuid);
   const router = useRouter();
   const colors = useAppColors();
-  const { showSuccess } = useAppDialog();
+  const { confirm, showError, showSuccess } = useAppDialog();
   const [values, setValues] = useState<MedicineFormValues>(emptyMedicineFormValues);
   const [brands, setBrands] = useState<MedicineBrand[]>([]);
   const [fieldErrors, setFieldErrors] = useState<MedicineFormFieldErrors>({});
@@ -152,6 +153,30 @@ export function MedicineFormScreen({ medicineUuid }: MedicineFormScreenProps) {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleDelete = () => {
+    if (!medicineUuid) return;
+
+    confirm({
+      cancelLabel: 'Cancelar',
+      confirmLabel: 'Excluir',
+      description: 'Esta ação não pode ser desfeita.',
+      destructive: true,
+      onConfirm: async () => {
+        try {
+          await deleteMedicine(medicineUuid);
+          showSuccess({ description: 'O medicamento foi excluído com sucesso.', title: 'Medicamento excluído' });
+          router.replace(routes.medicines);
+        } catch (error: unknown) {
+          showError({
+            description: getMedicineErrorMessage(error, 'Não foi possível excluir o medicamento. Tente novamente.'),
+            title: 'Não foi possível excluir o medicamento',
+          });
+        }
+      },
+      title: 'Excluir medicamento?',
+    });
   };
 
   return (
@@ -259,6 +284,27 @@ export function MedicineFormScreen({ medicineUuid }: MedicineFormScreenProps) {
                 </Text>
               )}
             </Pressable>
+            {isEdit ? (
+              <Pressable
+                accessibilityLabel='Excluir medicamento'
+                onPress={handleDelete}
+                style={({ pressed }) => ({
+                  alignItems: 'center',
+                  borderColor: colors.danger,
+                  borderRadius: 14,
+                  borderWidth: 1,
+                  opacity: pressed ? 0.72 : 1,
+                  paddingVertical: 14,
+                })}
+              >
+                <XStack gap='$2' items='center'>
+                  <TrashIcon color={colors.danger} size={20} weight='bold' />
+                  <Text fontSize={16} fontWeight='700' style={{ color: colors.danger }}>
+                    Excluir medicamento
+                  </Text>
+                </XStack>
+              </Pressable>
+            ) : null}
           </YStack>
         </ScrollView>
       ) : null}

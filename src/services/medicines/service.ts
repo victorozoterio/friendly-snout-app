@@ -36,6 +36,10 @@ export async function updateMedicine(uuid: string, input: MedicineMutationInput)
   return data;
 }
 
+export async function deleteMedicine(uuid: string): Promise<void> {
+  await api.delete(`/medicines/${uuid}`);
+}
+
 export async function getMedicineBrands({
   page = 1,
   limit = 100,
@@ -55,4 +59,8 @@ export async function createMedicineBrand(input: MedicineBrandMutationInput): Pr
 export async function updateMedicineBrand(uuid: string, input: MedicineBrandMutationInput): Promise<MedicineBrand> {
   const { data } = await api.patch<MedicineBrand>(`/medicine-brands/${uuid}`, input);
   return data;
+}
+
+export async function deleteMedicineBrand(uuid: string): Promise<void> {
+  await api.delete(`/medicine-brands/${uuid}`);
 }
