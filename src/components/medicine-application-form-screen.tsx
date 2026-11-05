@@ -15,16 +15,14 @@ import {
   type MedicineApplicationFormValues,
   type MedicineApplicationFrequency,
   type MedicineApplicationKind,
-  maskApplicationDate,
-  maskApplicationTime,
   medicineApplicationFormSchema,
   parseApplicationDateTime,
   scheduledApplicationFutureError,
 } from '../services/medicine-applications';
 import { getMedicines, type Medicine } from '../services/medicines';
 import { palette } from '../theme';
+import { DateTimeField } from './form/date-time-field';
 import { ChoiceField, InputField } from './form/fields';
-import { NativeDateTimeField } from './form/native-date-time-field';
 import { LoadError, LoadingState } from './form/states';
 import { FormErrorInline } from './form-error-inline';
 import { useAppColors } from './main-layout';
@@ -318,7 +316,7 @@ export function MedicineApplicationFormScreen({ animalUuid }: MedicineApplicatio
               <YStack gap='$1'>
                 <XStack gap='$3'>
                   <YStack flex={1}>
-                    <NativeDateTimeField
+                    <DateTimeField
                       error={fieldErrors.date}
                       label={
                         values.kind === 'realized'
@@ -331,7 +329,6 @@ export function MedicineApplicationFormScreen({ animalUuid }: MedicineApplicatio
                       minimumDate={values.kind === 'scheduled' ? todayStart : undefined}
                       mode='date'
                       onChange={(value) => changeField('date', formatPickerDate(value))}
-                      onTextChange={(value) => changeField('date', maskApplicationDate(value))}
                       required
                       showErrorMessage={!dateTimeError}
                       textValue={values.date}
@@ -339,12 +336,11 @@ export function MedicineApplicationFormScreen({ animalUuid }: MedicineApplicatio
                     />
                   </YStack>
                   <YStack flex={0.72}>
-                    <NativeDateTimeField
+                    <DateTimeField
                       error={fieldErrors.time}
                       label='Horário'
                       mode='time'
                       onChange={(value) => changeField('time', formatPickerTime(value))}
-                      onTextChange={(value) => changeField('time', maskApplicationTime(value))}
                       required
                       showErrorMessage={!dateTimeError}
                       textValue={values.time}
@@ -357,13 +353,12 @@ export function MedicineApplicationFormScreen({ animalUuid }: MedicineApplicatio
 
               {isRecurring ? (
                 <YStack gap='$2'>
-                  <NativeDateTimeField
+                  <DateTimeField
                     error={fieldErrors.endDate}
                     label='Data de término'
                     minimumDate={pickerValue}
                     mode='date'
                     onChange={(value) => changeField('endDate', formatPickerDate(value))}
-                    onTextChange={(value) => changeField('endDate', maskApplicationDate(value))}
                     required
                     textValue={values.endDate}
                     value={endPickerValue}
