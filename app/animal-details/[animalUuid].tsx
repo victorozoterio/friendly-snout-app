@@ -176,6 +176,9 @@ function AnimalDetailsContent({
 
   const notInformed = 'Não informado';
   const isFeline = animal.species.name.trim().toLocaleLowerCase('pt-BR') === 'gato';
+  const calendarDataKey = scheduledApplications
+    .map((application) => `${application.uuid}-${application.appliedAt}-${application.nextApplicationAt}`)
+    .join('|');
 
   const loadPreviewData = useCallback(async () => {
     setIsAgendaLoading(true);
@@ -476,6 +479,7 @@ function AnimalDetailsContent({
             applications={scheduledApplications}
             hasError={hasAgendaError}
             isLoading={isAgendaLoading}
+            key={calendarDataKey}
           />
         </YStack>
 

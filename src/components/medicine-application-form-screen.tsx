@@ -202,7 +202,11 @@ export function MedicineApplicationFormScreen({ animalUuid }: MedicineApplicatio
             : 'A aplicação realizada foi adicionada ao histórico.',
         title: data.kind === 'scheduled' ? 'Aplicação agendada' : 'Aplicação registrada',
       });
-      router.dismissTo(animalRoutes.medicines(animalUuid) as never);
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace(animalRoutes.medicines(animalUuid) as never);
+      }
     } catch (error: unknown) {
       setApiError(
         getMedicineApplicationErrorMessage(
